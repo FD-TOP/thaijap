@@ -16,7 +16,7 @@
 
     <div id="menu-container"></div>
 
-    <div id="cart-bar">
+    <div id="cart-bar" style="display:none;">
         <div id="cart-info"><span id="cart-count">0</span> articles | <span id="cart-total">0.00</span>€</div>
         <button id="btn-commander" onclick="envoyerCommande()">Commander</button>
     </div>
@@ -39,9 +39,8 @@
         document.getElementById('display-table').innerText = tableId;
 
         let panier = [];
-        const categories = ["entrees", "sushis", "plats"];
+        const categories = ["entrees", "sushis", "plats", "boissons", "desserts"];
 
-        // ON LIT À LA RACINE "/"
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('menu-container');
@@ -51,16 +50,25 @@
                 html += `<h2 class="category-title">${cat.toUpperCase()}</h2>`;
                 for (let id in data) {
                     const p = data[id];
-                    // On vérifie que c'est un produit (p1, p2...) et pas le dossier commandes
                     if (id.startsWith('p') && p.categorie === cat) {
                         html += `
                             <div class="product-card">
+                                ${p.img ? `<img src="${p.img}" class="product-img">` : ''}
                                 <div class="product-info">
                                     <strong>${p.nom}</strong>
-                                    <p>${p.prix.toFixed(2)}€</p>
-                                    ${p.farses ? `<select id="f-${id}" class="farce-select">${p.farses.map(f => `<option value="${f}">${f}</option>`).join('')}</select>` : ''}
+                                    ${p.prix ? `<p>${p.prix.toFixed(2)}€</p>` : ''}
+                                    
+                                    ${p.specials ? `
+                                        <select id="spec-${id}" class="farce-select">
+                                            ${p.specials.map(s => `<option value="${s.v}|${s.p}">${s.v} - ${s.p.toFixed(2)}€</option>`).join('')}
+                                        </select>` : ''}
+                                    
+                                    ${p.options ? `
+                                        <select id="opt-${id}" class="farce-select">
+                                            ${p.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+                                        </select>` : ''}
                                 </div>
-                                <button class="add-btn" onclick="ajouter('${id}','${p.nom}',${p.prix},${p.farses?true:false})">+</button>
+                                <button class="add-btn" onclick="${p.specials ? `ajouterSpecial('${id}', '${p.nom}')` : `ajouterSimple('${id}','${p.nom}',${p.prix},${p.options?true:false})`}">+</button>
                             </div>`;
                     }
                 }
@@ -68,10 +76,20 @@
             container.innerHTML = html;
         });
 
-        function ajouter(id, nom, prix, hasFarse) {
+        function ajouterSimple(id, nom, prix, hasOpt) {
             let n = nom;
-            if(hasFarse) n += " (" + document.getElementById('f-'+id).value + ")";
+            if(hasOpt) n += " (" + document.getElementById('opt-'+id).value + ")";
             panier.push({nom: n, prix: prix});
+            majPanier();
+        }
+
+        function ajouterSpecial(id, nom) {
+            const val = document.getElementById('spec-'+id).value.split('|');
+            panier.push({nom: nom + " " + val[0], prix: parseFloat(val[1])});
+            majPanier();
+        }
+
+        function majPanier() {
             document.getElementById('cart-count').innerText = panier.length;
             document.getElementById('cart-total').innerText = panier.reduce((s,i)=>s+i.prix,0).toFixed(2);
             document.getElementById('cart-bar').style.display = "flex";
@@ -82,6 +100,7 @@
             db.ref('commandes').push(cmd).then(() => {
                 alert("Commande envoyée !");
                 panier = [];
+                majPanier();
                 document.getElementById('cart-bar').style.display = "none";
             });
         }
