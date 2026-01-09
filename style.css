@@ -1,53 +1,159 @@
-:root { --red-jap: #bc002d; --black-jap: #1a1a1a; --cream: #fdfaf5; }
-body { font-family: 'Noto Sans JP', sans-serif; background-color: var(--cream); margin: 0; padding-bottom: 90px; }
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&family=Noto+Sans+JP:wght@300;500;700&display=swap');
 
-/* Splash Screen */
-#splash-screen { position: fixed; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-.fade-in-logo { width: 150px; animation: pulse 2s infinite; }
-.loader-line { width: 100px; height: 3px; background: var(--red-jap); margin-top: 20px; border-radius: 5px; }
-
-header { background: var(--black-jap); color: white; text-align: center; padding: 15px; }
-.mini-logo { width: 40px; vertical-align: middle; margin-right: 10px; }
-.category-title { display: flex; align-items: center; color: var(--red-jap); font-size: 1.2em; margin: 25px 0; }
-.category-title span { flex: 1; height: 1px; background: #ccc; margin: 0 15px; }
-
-/* Alignement Horizontal Parfait */
-.product-card { 
-    display: flex; 
-    align-items: center; 
-    background: white; 
-    margin: 12px; 
-    padding: 15px; 
-    border-radius: 15px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-}
-.product-img { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; margin-right: 15px; flex-shrink: 0; }
-.product-info { flex: 1; display: flex; flex-direction: column; margin-right: 10px; }
-.prod-name { font-size: 1.1em; color: var(--black-jap); }
-.price { color: var(--red-jap); font-weight: bold; margin: 4px 0; }
-
-/* Listes déroulantes (Select) Modernes */
-.jap-select { 
-    width: 100%; padding: 10px; margin-top: 8px; border: 2px solid #f2f2f2; border-radius: 8px; 
-    background-color: #fafafa; font-size: 0.9em; appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23bc002d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
-}
-.note-input { width: 100%; margin-top: 8px; border: 1px dashed #bbb; padding: 6px; font-size: 0.8em; border-radius: 5px; }
-
-/* Bouton + Alignement Droite */
-.add-btn { 
-    background: var(--red-jap); color: white; border: none; border-radius: 12px; 
-    width: 45px; height: 45px; font-size: 24px; font-weight: bold; flex-shrink: 0;
-    box-shadow: 0 4px 8px rgba(188, 0, 45, 0.2); cursor: pointer;
+:root {
+    --red-jap: #D32F2F;
+    --black-jap: #121212;
+    --gold: #C5A059;
+    --cream: #FAFAFA;
+    --glass: rgba(255, 255, 255, 0.95);
 }
 
-#cart-bar { position: fixed; bottom: 0; width: 100%; background: var(--black-jap); color: white; display: flex; justify-content: space-between; padding: 15px; box-sizing: border-box; z-index: 1000; }
-#btn-commander { background: var(--red-jap); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+body {
+    font-family: 'Montserrat', 'Noto Sans JP', sans-serif;
+    background-color: #F0F0F0;
+    color: var(--black-jap);
+    margin: 0;
+    line-height: 1.6;
+}
 
-.admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 15px; }
-.order-card { background: white; padding: 15px; border-left: 6px solid var(--red-jap); border-radius: 8px; color: black; }
-.stock-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; color: black; }
-.stock-item button { color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+/* HEADER LUXE */
+header {
+    background: var(--black-jap);
+    padding: 30px 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--red-jap);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
 
-@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+header h1 {
+    color: white;
+    letter-spacing: 5px;
+    font-weight: 300;
+    margin: 10px 0;
+    font-size: 1.8em;
+}
+
+.table-badge {
+    color: var(--gold);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* TITRES DE CATÉGORIES */
+.category-title {
+    text-align: center;
+    margin: 40px 0 20px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--black-jap);
+    position: relative;
+}
+
+.category-title::after {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--red-jap);
+    margin: 10px auto;
+}
+
+/* CARTES PRODUITS ÉPURÉES */
+.product-card {
+    background: var(--glass);
+    margin: 15px auto;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-radius: 4px; /* Coins moins arrondis pour un look plus pro */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border-left: 0px solid var(--red-jap);
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    border-left: 5px solid var(--red-jap);
+    transform: translateX(5px);
+}
+
+.product-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 2px;
+    filter: grayscale(20%);
+    margin-right: 20px;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-info strong {
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.price {
+    color: var(--red-jap);
+    font-weight: 400;
+    font-size: 1.2em;
+}
+
+/* SELECT ET INPUTS STYLE MINIMALISTE */
+.jap-select, .note-input {
+    border: none;
+    border-bottom: 1px solid #DDD;
+    background: transparent;
+    padding: 10px 0;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.85em;
+    margin-top: 10px;
+    color: #666;
+}
+
+.jap-select:focus, .note-input:focus {
+    outline: none;
+    border-bottom: 1px solid var(--red-jap);
+}
+
+/* BOUTON AJOUTER */
+.add-btn {
+    background: none;
+    border: 1px solid #EEE;
+    color: var(--black-jap);
+    width: 50px;
+    height: 50px;
+    font-size: 1.5em;
+    font-weight: 200;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 15px;
+}
+
+.add-btn:hover {
+    background: var(--black-jap);
+    color: white;
+    border-color: var(--black-jap);
+}
+
+/* BARRE DE COMMANDE NOIRE */
+#cart-bar {
+    background: var(--black-jap);
+    padding: 20px 30px;
+    border-top: 2px solid var(--gold);
+}
+
+#btn-commander {
+    background: var(--red-jap);
+    padding: 12px 30px;
+    border-radius: 0; /* Carré pour le look luxe */
+    letter-spacing: 2px;
+}
