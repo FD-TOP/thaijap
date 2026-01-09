@@ -28,9 +28,7 @@
         <h1>THAI JAP</h1>
         <div id="table-num" style="font-size: 0.8rem; color: var(--gold);">TABLE --</div>
     </header>
-
     <main id="menu-container"></main>
-
     <div id="cart-bar" style="display:none;">
         <div id="cart-info">
             <span id="cart-count">0</span> ART. | <span id="cart-total">0.00</span>€
@@ -38,29 +36,18 @@
         </div>
         <button id="btn-commander" onclick="envoyerCommande()">COMMANDER</button>
     </div>
-
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCiqOVjzAS5Crn4SPBkY3btyJtuCBgddpY",
-            databaseURL: "https://thaijap-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "thaijap",
-            appId: "1:84821188454:web:0078ba82b4affbe0abb2a7"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCiqOVjzAS5Crn4SPBkY3btyJtuCBgddpY", databaseURL: "https://thaijap-default-rtdb.europe-west1.firebasedatabase.app", projectId: "thaijap", appId: "1:84821188454:web:0078ba82b4affbe0abb2a7" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         const params = new URLSearchParams(window.location.search);
         const table = params.get('table') || "Emporter";
         document.getElementById('table-num').innerText = "TABLE " + table;
-
         let panier = [];
-        const categories = ["entrees", "sushis", "plats", "boissons", "desserts"];
-
         db.ref('/').on('value', (snap) => {
-            const data = snap.val();
-            const container = document.getElementById('menu-container');
-            let html = "";
-            categories.forEach(cat => {
+            const data = snap.val(); const container = document.getElementById('menu-container'); let html = "";
+            const cats = ["entrees", "sushis", "plats", "boissons", "desserts"];
+            cats.forEach(cat => {
                 let catItems = "";
                 for (let id in data) {
                     const p = data[id];
@@ -76,24 +63,20 @@
                             if(availOpts.trim() !== "") optHtml = `<select id="opt-${id}" class="jap-select">${availOpts}</select>`;
                         }
                         if((p.specials && specHtml==="") || (p.options && optHtml==="")) continue;
-                        catItems += `<div class="product-card"><div class="product-info"><span class="prod-name">${p.nom}</span><span>${p.prix ? p.prix.toFixed(2)+'€' : ''}</span>${optHtml} ${specHtml}<input type="text" id="note-${id}" placeholder="Note ou préférence..." class="note-input"></div><button class="add-btn" onclick="ajouter('${id}', '${p.nom}', ${p.prix || 0}, ${!!p.options}, ${!!p.specials}, '${p.categorie}')">+</button></div>`;
+                        catItems += `<div class="product-card"><div class="product-info"><span class="prod-name">${p.nom}</span><span>${p.prix ? p.prix.toFixed(2)+'€' : ''}</span>${optHtml} ${specHtml}<input type="text" id="note-${id}" placeholder="Note..." class="note-input"></div><button class="add-btn" onclick="ajouter('${id}', '${p.nom}', ${p.prix || 0}, ${!!p.options}, ${!!p.specials}, '${p.categorie}')">+</button></div>`;
                     }
                 }
                 if(catItems) html += `<div class="category-title">${cat}</div>` + catItems;
             });
             container.innerHTML = html;
         });
-
         function ajouter(id, nom, prix, hasOpt, hasSpec, cat) {
-            let n = nom; let pFinal = prix;
-            let noteClient = document.getElementById('note-' + id).value;
+            let n = nom; let pFinal = prix; let note = document.getElementById('note-' + id).value;
             if(hasOpt) n += " (" + document.getElementById('opt-'+id).value + ")";
             if(hasSpec) { const s = document.getElementById('spec-'+id).value.split('|'); n += " " + s[0]; pFinal = parseFloat(s[1]); }
-            panier.push({nom: n, prix: pFinal, categorie: cat, note: noteClient});
-            document.getElementById('note-' + id).value = "";
-            calculerPanier();
+            panier.push({nom: n, prix: pFinal, categorie: cat, note: note});
+            document.getElementById('note-' + id).value = ""; calculerPanier();
         }
-
         function calculerPanier() {
             let total = 0; let tempPanier = [...panier]; let nbTokyo = 0; let nbGourmand = 0;
             while (true) {
@@ -115,7 +98,6 @@
             document.getElementById('applied-menu').innerText = labels.join(" | ");
             document.getElementById('cart-bar').style.display = panier.length > 0 ? "flex" : "none";
         }
-
         function envoyerCommande() {
             const cmd = { table: table, articles: panier, total: document.getElementById('cart-total').innerText, menu: document.getElementById('applied-menu').innerText, statut: "En attente", heure: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) };
             db.ref('commandes').push(cmd).then(() => { alert("Commande envoyée !"); panier = []; calculerPanier(); });
