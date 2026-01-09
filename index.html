@@ -16,7 +16,7 @@
     </div>
 
     <header>
-        <img src="images/logo.png" alt="Logo" class="mini-logo">
+        <img src="images/logo.png" alt="Logo ThaiJap" class="mini-logo">
         <h1>THAI JAP</h1>
         <div class="table-badge">Expérience Table <span id="display-table">--</span></div>
     </header>
@@ -48,9 +48,11 @@
         const tableId = params.get('table') || "Emporter";
         document.getElementById('display-table').innerText = tableId;
 
+        // Splash Screen Timer
         window.addEventListener('load', () => {
-            setTimeout(() => { document.getElementById('splash-screen').style.opacity = '0'; 
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 500);
+            setTimeout(() => { 
+                document.getElementById('splash-screen').style.opacity = '0'; 
+                setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 500);
             }, 2500);
         });
 
@@ -73,19 +75,32 @@
                                 <div class="product-info">
                                     <div class="prod-header">
                                         <span class="prod-name">${p.nom}</span>
-                                        <span class="price">${p.prix ? p.prix.toFixed(2) : '--'}€</span>
+                                        <span class="price">${p.prix ? p.prix.toFixed(2)+'€' : ''}</span>
                                     </div>
-                                    ${p.specials ? `<select id="spec-${id}" class="jap-select">${p.specials.map(s => `<option value="${s.v}|${s.p}">${s.v} (${s.p.toFixed(2)}€)</option>`).join('')}</select>` : ''}
-                                    ${p.options ? `<select id="opt-${id}" class="jap-select">${p.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>` : ''}
+                                    
+                                    ${p.options ? `
+                                        <div class="select-wrapper">
+                                            <label>Option au choix</label>
+                                            <select id="opt-${id}" class="jap-select">
+                                                ${p.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+                                            </select>
+                                        </div>` : ''}
+
+                                    ${p.specials ? `
+                                        <div class="select-wrapper">
+                                            <label>Garniture / Viande</label>
+                                            <select id="spec-${id}" class="jap-select">
+                                                ${p.specials.map(s => `<option value="${s.v}|${s.p}">${s.v} — ${s.p.toFixed(2)}€</option>`).join('')}
+                                            </select>
+                                        </div>` : ''}
+
                                     <input type="text" id="note-${id}" placeholder="Note de préparation..." class="note-input">
                                 </div>
                                 <button class="add-btn" onclick="ajouter('${id}', '${p.nom}', ${p.prix || 0}, ${!!p.options}, ${!!p.specials}, '${p.categorie}')">+</button>
                             </div>`;
                     }
                 }
-                if(catItems) {
-                    html += `<h2 class="category-title">${cat.toUpperCase()}</h2>` + catItems;
-                }
+                if(catItems) html += `<h2 class="category-title">${cat.toUpperCase()}</h2>` + catItems;
             });
             container.innerHTML = html;
         });
@@ -114,7 +129,7 @@
 
             if(ents.length >= 1 && sush.length >= 1 && bois.length >= 1) {
                 total = total - (ents[0].prix + sush[0].prix + bois[0].prix) + 16.90;
-                message = "MENU TOKYO APPLIQUÉ";
+                message = "MENU TOKYO APPLIQUÉ (16.90€)";
             }
             document.getElementById('cart-count').innerText = panier.length;
             document.getElementById('cart-total').innerText = total.toFixed(2);
@@ -129,7 +144,7 @@
                 heure: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})
             };
             db.ref('commandes').push(cmd).then(() => {
-                alert("Votre commande a été transmise au chef.");
+                alert("Itadakimasu ! Votre commande est en cuisine.");
                 panier = [];
                 calculerPanier();
             });
