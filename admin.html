@@ -2,61 +2,47 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin ThaiJap | Dashboard Complet</title>
+    <title>Admin ThaiJap | Gestion Totale</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS INTÉGRÉ --- */
         :root { --red: #BC002D; --black: #121212; --gold: #C5A059; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: #fff; overflow: hidden; }
-        
         .admin-layout-pro { display: flex; height: 100vh; }
         
-        /* Colonnes */
-        .admin-sidebar { background: #1a1a1a; width: 280px; border-right: 1px solid #333; display: flex; flex-direction: column; }
+        .admin-sidebar { background: #1a1a1a; width: 300px; border-right: 1px solid #333; display: flex; flex-direction: column; }
         .admin-main { flex: 1; background: #050505; overflow-y: auto; }
         .history-panel { width: 340px; border-left: 1px solid #333; }
         
         .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
         .scrollable { flex: 1; overflow-y: auto; padding: 10px; }
 
-        /* Commandes au centre */
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; padding: 20px; }
-        .order-card { background: #1a1a1a; padding: 15px; border-top: 5px solid var(--red); border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .table-label { font-size: 1.5rem; color: var(--red); font-weight: 700; }
-        .order-top { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 10px; }
-        .item-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px solid #222; padding-bottom: 4px; }
-        .item-ctrl button { background: #333; color: #fff; border: 1px solid #444; padding: 2px 8px; cursor: pointer; margin-left: 4px; border-radius: 3px; }
-        .total-row { border-top: 1px solid #333; margin-top: 10px; padding-top: 10px; color: var(--gold); font-weight: 700; text-align: right; }
+        /* Stocks détaillés */
+        .stock-group { margin-bottom: 15px; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
+        .stock-group-title { background: #222; padding: 8px; font-size: 0.75rem; color: var(--gold); font-weight: 700; }
+        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #222; font-size: 0.8rem; background: #151515; }
+        .stock-item button { border: none; padding: 4px 8px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 2px; font-size: 0.65rem; }
+        .stock-item button.on { background: #2ecc71; }
+        .stock-item button.off { background: #e74c3c; }
 
-        /* Boutons Actions */
+        /* Commandes & Historique (Style précédent conservé) */
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 20px; }
+        .order-card { background: #1a1a1a; padding: 15px; border-top: 5px solid var(--red); border-radius: 4px; }
+        .table-label { font-size: 1.5rem; color: var(--red); font-weight: 700; }
         .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
         .order-actions button { padding: 10px; font-weight: 700; border: none; cursor: pointer; border-radius: 3px; font-size: 0.75rem; color: #fff; }
         .btn-print { background: #3498db; }
         .btn-cash { background: #2ecc71; }
         .btn-card { background: #9b59b6; }
-        .btn-del { background: #e74c3c; grid-column: span 2; margin-top: 5px; }
+        .btn-del { background: #e74c3c; grid-column: span 2; }
 
-        /* Historique à droite */
-        .history-day-header { background: #111; padding: 15px; border-left: 4px solid var(--gold); margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
-        .history-day-header:hover { background: #222; }
+        .history-day-header { background: #111; padding: 15px; border-left: 4px solid var(--gold); margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .history-day-details { max-height: 0; overflow: hidden; transition: all 0.3s ease-out; background: #0a0a0a; }
         .history-day-details.active { max-height: 2000px; padding: 10px; border: 1px solid #222; margin-bottom: 15px; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
-        .h-item-info { display: flex; flex-direction: column; font-size: 0.75rem; }
-        .h-table { color: var(--gold); font-weight: 700; }
-        .h-price { color: #2ecc71; font-weight: 700; }
-        .day-total { color: var(--gold); font-weight: 700; font-size: 1.1rem; }
-
-        /* Stocks à gauche */
-        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; font-size: 0.8rem; }
-        .stock-item button { border: none; padding: 5px 10px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 3px; }
-        .stock-item button.on { background: #2ecc71; }
-        .stock-item button.off { background: #e74c3c; }
-
-        /* Impression */
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #222; font-size: 0.8rem; }
+        
         .only-print { display: none; }
         @media print {
             .no-print { display: none !important; }
@@ -69,7 +55,7 @@
 <body class="admin-layout-pro">
 
     <aside class="admin-sidebar stock-panel no-print">
-        <div class="panel-header">📦 STOCKS</div>
+        <div class="panel-header">📦 GESTION STOCKS</div>
         <div id="stock-list" class="scrollable"></div>
     </aside>
 
@@ -79,7 +65,7 @@
     </main>
 
     <aside class="admin-sidebar history-panel no-print">
-        <div class="panel-header">📊 HISTORIQUE & VENTES</div>
+        <div class="panel-header">📊 VENTES & CA</div>
         <div id="history-list" class="scrollable"></div>
     </aside>
 
@@ -96,18 +82,53 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- GESTION STOCKS ---
+        // --- GESTION STOCKS AVEC VARIANTES ---
         db.ref('/').on('value', (snap) => {
             const data = snap.val();
             let h = "";
             for(let id in data) {
                 if(id.startsWith('p')) {
-                    const isOff = data[id].dispo === false;
-                    h += `<div class="stock-item"><span>${data[id].nom}</span><button onclick="db.ref('${id}').update({dispo: ${isOff}})" class="${isOff?'off':'on'}">${isOff?'OFF':'ON'}</button></div>`;
+                    const p = data[id];
+                    h += `<div class="stock-group">
+                        <div class="stock-group-title">${p.nom}</div>`;
+                    
+                    // Cas 1 : Produit simple
+                    if(!p.specials && !p.options) {
+                        const isOff = p.dispo === false;
+                        h += `<div class="stock-item"><span>Général</span><button onclick="toggleProdStatus('${id}', ${isOff})" class="${isOff?'off':'on'}">${isOff?'OFF':'ON'}</button></div>`;
+                    }
+                    
+                    // Cas 2 : Spéciaux (Riz Thaï, etc.)
+                    if(p.specials) {
+                        p.specials.forEach((s, idx) => {
+                            const isOff = s.dispo === false;
+                            h += `<div class="stock-item"><span>${s.v}</span><button onclick="toggleSpecialStatus('${id}', ${idx}, ${isOff})" class="${isOff?'off':'on'}">${isOff?'OFF':'ON'}</button></div>`;
+                        });
+                    }
+
+                    // Cas 3 : Options (Nems, etc.)
+                    if(p.options) {
+                        // Note: si tes options sont juste un tableau de strings, on peut gérer une clé "optionsDispo"
+                        p.options.forEach((opt, idx) => {
+                            const isOff = (p.optionsDispo && p.optionsDispo[idx] === false);
+                            h += `<div class="stock-item"><span>${opt}</span><button onclick="toggleOptionStatus('${id}', ${idx}, ${isOff})" class="${isOff?'off':'on'}">${isOff?'OFF':'ON'}</button></div>`;
+                        });
+                    }
+                    h += `</div>`;
                 }
             }
             document.getElementById('stock-list').innerHTML = h;
         });
+
+        function toggleProdStatus(id, off) { db.ref(id).update({dispo: off}); }
+        function toggleSpecialStatus(id, idx, off) { db.ref(`${id}/specials/${idx}`).update({dispo: off}); }
+        function toggleOptionStatus(id, idx, off) { 
+            db.ref(`${id}/optionsDispo`).transaction(current => {
+                if(!current) current = {};
+                current[idx] = off;
+                return current;
+            });
+        }
 
         // --- COMMANDES & HISTORIQUE ---
         let lastCount = 0;
@@ -115,17 +136,13 @@
             const data = snap.val();
             const grid = document.getElementById('admin-grid');
             const historyDiv = document.getElementById('history-list');
-            
             if(data && Object.keys(data).length > lastCount) document.getElementById('notif').play().catch(()=>{});
             lastCount = data ? Object.keys(data).length : 0;
-
             grid.innerHTML = "";
             let groups = {};
-
             for(let id in data) {
                 const o = data[id];
                 const dateCmd = o.date || new Date().toLocaleDateString('fr-FR');
-
                 if(o.statut === "Payé") {
                     if(!groups[dateCmd]) groups[dateCmd] = { total: 0, list: [] };
                     groups[dateCmd].total += parseFloat(o.total);
@@ -133,19 +150,9 @@
                 } else {
                     grid.innerHTML += `
                         <div class="order-card">
-                            <div class="order-top">
-                                <span class="table-label">T-${o.table}</span>
-                                <span style="color:#888; font-size:0.8rem;">${o.heure}</span>
-                            </div>
+                            <div class="order-top"><span class="table-label">T-${o.table}</span><span style="color:#888; font-size:0.8rem;">${o.heure}</span></div>
                             <div class="order-content">
-                                ${o.articles.map((a, idx) => `
-                                    <div class="item-line">
-                                        <span>${a.nom}</span>
-                                        <div class="item-ctrl">
-                                            <button onclick="modifier('${id}', ${idx}, 'plus')">+</button>
-                                            <button onclick="modifier('${id}', ${idx}, 'moins')">-</button>
-                                        </div>
-                                    </div>`).join('')}
+                                ${o.articles.map((a, idx) => `<div class="item-line"><span>${a.nom}</span><div class="item-ctrl"><button onclick="modifier('${id}', ${idx}, 'plus')">+</button><button onclick="modifier('${id}', ${idx}, 'moins')">-</button></div></div>`).join('')}
                             </div>
                             <div class="total-row">Total : ${o.total}€</div>
                             <div class="order-actions">
@@ -157,35 +164,14 @@
                         </div>`;
                 }
             }
-
             let hHtml = "";
             for(let date in groups) {
-                hHtml += `
-                    <div class="history-day-wrapper">
-                        <div class="history-day-header" onclick="toggleHistory(this)">
-                            <strong>📅 ${date}</strong>
-                            <span class="day-total">${groups[date].total.toFixed(2)}€</span>
-                        </div>
-                        <div class="history-day-details">
-                            ${groups[date].list.map(cmd => `
-                                <div class="history-item">
-                                    <div class="h-item-info">
-                                        <span class="h-table">Table ${cmd.table} (${cmd.heure})</span>
-                                        <span style="color:#888">${cmd.modePaiement}</span>
-                                    </div>
-                                    <strong class="h-price">${cmd.total}€</strong>
-                                </div>`).join('')}
-                        </div>
-                    </div>`;
+                hHtml += `<div class="history-day-wrapper"><div class="history-day-header" onclick="toggleHistory(this)"><strong>📅 ${date}</strong><span class="day-total">${groups[date].total.toFixed(2)}€</span></div><div class="history-day-details">${groups[date].list.map(cmd => `<div class="history-item"><span>Table ${cmd.table} (${cmd.heure}) - ${cmd.modePaiement}</span><strong style="color:#2ecc71">${cmd.total}€</strong></div>`).join('')}</div></div>`;
             }
             historyDiv.innerHTML = hHtml;
         });
 
-        function toggleHistory(el) {
-            const details = el.nextElementSibling;
-            details.classList.toggle('active');
-        }
-
+        function toggleHistory(el) { el.nextElementSibling.classList.toggle('active'); }
         function modifier(cid, idx, act) {
             db.ref(`commandes/${cid}`).once('value', (s) => {
                 let c = s.val();
@@ -194,7 +180,6 @@
                 db.ref(`commandes/${cid}`).update({articles:c.articles, total:nt});
             });
         }
-
         function encaisser(id, mode) {
             db.ref(`commandes/${id}`).once('value', (s) => {
                 const o = s.val();
@@ -202,21 +187,17 @@
                 db.ref(`commandes/${id}`).update({statut: "Payé", modePaiement: mode, date: new Date().toLocaleDateString('fr-FR')});
             });
         }
-
         function imprimerCuisine(id) {
             db.ref(`commandes/${id}`).once('value', (s) => {
                 const o = s.val();
-                let c = `<h1>CUISINE - TABLE ${o.table}</h1><p>${o.heure}</p><hr>`;
+                let c = `<h1>CHEF - TABLE ${o.table}</h1><hr>`;
                 o.articles.forEach(a => { c += `<h2>• ${a.nom}</h2>${a.note ? `<p>NOTE: ${a.note}</p>` : ''}`; });
-                document.getElementById('print-zone').innerHTML = c;
-                window.print();
+                document.getElementById('print-zone').innerHTML = c; window.print();
             });
         }
-
         function imprimerTicketClient(o, mode) {
             let c = `<div class="ticket"><h2>THAI JAP</h2><p>TABLE ${o.table} | ${o.heure}</p><hr>${o.articles.map(a => `<div class="t-line"><span>${a.nom}</span><span>${a.prix.toFixed(2)}€</span></div>`).join('')}<hr><div class="t-line"><strong>TOTAL</strong><strong>${o.total}€</strong></div><p>Mode: ${mode}</p></div>`;
-            document.getElementById('print-zone').innerHTML = c;
-            window.print();
+            document.getElementById('print-zone').innerHTML = c; window.print();
         }
     </script>
 </body>
