@@ -2,83 +2,74 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ThaiJap Admin | Gestion Complète</title>
+    <title>ThaiJap Admin | Dashboard Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- STYLE GLOBAL --- */
         :root { --red: #BC002D; --black: #121212; --gold: #C5A059; --grey: #1a1a1a; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: #fff; overflow: hidden; }
         
-        .admin-layout { display: flex; height: 100vh; }
+        /* Suppression de tout ce qui pourrait cacher la page */
+        body { 
+            margin: 0; 
+            font-family: 'Montserrat', sans-serif; 
+            background: #000; 
+            color: #fff; 
+            overflow: hidden; 
+            display: flex; 
+            height: 100vh; 
+        }
 
-        /* --- COLONNE GAUCHE: STOCKS --- */
-        .sidebar-stocks { width: 320px; background: var(--grey); border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .cat-title { background: var(--red); color: #fff; padding: 6px 12px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        /* 1. STOCKS (GAUCHE) */
+        .sidebar-stocks { width: 300px; background: var(--grey); border-right: 1px solid #333; display: flex; flex-direction: column; }
+        .cat-title { background: var(--red); color: #fff; padding: 8px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .stock-group { border-bottom: 1px solid #333; background: #151515; }
-        .stock-group-title { padding: 10px 12px; font-size: 0.85rem; color: var(--gold); font-weight: 700; border-bottom: 1px solid #222; }
+        .stock-group-title { padding: 10px; font-size: 0.85rem; color: var(--gold); font-weight: 700; border-bottom: 1px solid #222; }
         .stock-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; font-size: 0.8rem; }
         
-        /* --- COLONNE CENTRE: COMMANDES --- */
+        /* 2. COMMANDES (CENTRE) */
         .main-orders { flex: 1; background: #050505; overflow-y: auto; border-right: 1px solid #333; }
-        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 20px; }
-        .order-card { background: var(--grey); padding: 15px; border-top: 5px solid var(--red); border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 20px; }
+        .order-card { background: var(--grey); padding: 15px; border-top: 5px solid var(--red); border-radius: 4px; }
         .table-num { font-size: 1.6rem; color: var(--red); font-weight: 700; margin-bottom: 10px; }
-        .item-line { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; font-size: 0.9rem; }
 
-        /* --- COLONNE DROITE: HISTORIQUE --- */
+        /* 3. HISTORIQUE (DROITE) */
         .sidebar-history { width: 340px; background: #111; display: flex; flex-direction: column; }
         .history-day { background: #1a1a1a; padding: 15px; border-left: 4px solid var(--gold); margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .history-details { max-height: 0; overflow: hidden; transition: 0.3s ease-out; background: #050505; }
-        .history-details.active { max-height: 1500px; padding: 10px; border: 1px solid #222; margin-bottom: 10px; }
+        .history-details.active { max-height: 1000px; padding: 10px; border: 1px solid #222; }
         .history-item { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #222; font-size: 0.8rem; }
 
-        /* --- BOUTONS --- */
-        .btn { border: none; padding: 6px 12px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 4px; font-size: 0.7rem; }
+        /* BOUTONS ET INTERFACE */
+        .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; text-transform: uppercase; }
+        .btn-toggle { border: none; padding: 5px 10px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 3px; font-size: 0.65rem; min-width: 55px; }
         .btn-on { background: #2ecc71; }
         .btn-off { background: #e74c3c; }
-        .btn-action { width: 100%; padding: 10px; margin-top: 5px; cursor: pointer; border: none; font-weight: 700; border-radius: 3px; }
-        .btn-chef { background: #3498db; color: white; }
-        .btn-pay { background: var(--gold); color: black; margin-top: 10px; }
-
-        /* --- INTERFACE --- */
-        .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; }
+        .btn-pay { background: var(--gold); color: #000; width: 100%; padding: 10px; border: none; font-weight: 700; border-radius: 4px; cursor: pointer; margin-top: 10px; }
         .scroll { flex: 1; overflow-y: auto; }
-        
-        /* --- IMPRESSION --- */
-        .only-print { display: none; }
-        @media print {
-            .no-print { display: none !important; }
-            .only-print { display: block !important; color: #000; font-family: 'Courier Prime'; padding: 20px; }
-            .ticket { width: 80mm; text-align: center; }
-        }
     </style>
 </head>
 <body>
 
-    <div class="admin-layout">
-        <aside class="sidebar-stocks no-print">
-            <div class="panel-header">📦 GESTION STOCKS</div>
-            <div id="stock-list" class="scroll"></div>
-        </aside>
+    <aside class="sidebar-stocks">
+        <div class="panel-header">📦 STOCKS</div>
+        <div id="stock-list" class="scroll"></div>
+    </aside>
 
-        <main class="main-orders no-print">
-            <div class="panel-header">🔥 EN COURS</div>
-            <div id="orders-grid" class="orders-grid"></div>
-        </main>
+    <main class="main-orders">
+        <div class="panel-header">🔥 EN COURS</div>
+        <div id="orders-grid" class="orders-grid"></div>
+    </main>
 
-        <aside class="sidebar-history no-print">
-            <div class="panel-header">📊 HISTORIQUE</div>
-            <div id="history-list" class="scroll"></div>
-        </aside>
-    </div>
+    <aside class="sidebar-history">
+        <div class="panel-header">📊 HISTORIQUE</div>
+        <div id="history-list" class="scroll"></div>
+    </aside>
 
-    <div id="print-zone" class="only-print"></div>
+    <audio id="notif" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
     <script>
-        // CONFIGURATION FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCiqOVjzAS5Crn4SPBkY3btyJtuCBgddpY",
             databaseURL: "https://thaijap-default-rtdb.europe-west1.firebasedatabase.app",
@@ -90,7 +81,7 @@
 
         const categories = ["entrees", "sushis", "plats", "boissons", "desserts"];
 
-        // --- GESTION DES STOCKS ---
+        // --- CHARGEMENT STOCKS ---
         db.ref('/').on('value', (snap) => {
             const data = snap.val();
             let h = "";
@@ -100,20 +91,19 @@
                     if(id.startsWith('p') && data[id].categorie === cat) {
                         const p = data[id];
                         h += `<div class="stock-group"><div class="stock-group-title">${p.nom}</div>`;
-                        
                         if(p.specials) {
                             p.specials.forEach((s, idx) => {
                                 const isOff = s.dispo === false;
-                                h += `<div class="stock-row"><span>${s.v}</span><button class="btn ${isOff?'btn-off':'btn-on'}" onclick="setStock('${id}/specials/${idx}/dispo', ${isOff})">${isOff?'OFF':'ON'}</button></div>`;
+                                h += `<div class="stock-row"><span>${s.v}</span><button class="btn-toggle ${isOff?'btn-off':'btn-on'}" onclick="db.ref('${id}/specials/${idx}/dispo').set(${isOff?true:false})">${isOff?'OFF':'ON'}</button></div>`;
                             });
                         } else if(p.options) {
                             p.options.forEach((opt, idx) => {
                                 const isOff = (p.optionsDispo && p.optionsDispo[idx] === false);
-                                h += `<div class="stock-row"><span>${opt}</span><button class="btn ${isOff?'btn-off':'btn-on'}" onclick="setOption('${id}', ${idx}, ${isOff})">${isOff?'OFF':'ON'}</button></div>`;
+                                h += `<div class="stock-row"><span>${opt}</span><button class="btn-toggle ${isOff?'btn-off':'btn-on'}" onclick="db.ref('${id}/optionsDispo/${idx}').set(${isOff?true:false})">${isOff?'OFF':'ON'}</button></div>`;
                             });
                         } else {
                             const isOff = p.dispo === false;
-                            h += `<div class="stock-row"><span>Global</span><button class="btn ${isOff?'btn-off':'btn-on'}" onclick="setStock('${id}/dispo', ${isOff})">${isOff?'OFF':'ON'}</button></div>`;
+                            h += `<div class="stock-row"><span>Général</span><button class="btn-toggle ${isOff?'btn-off':'btn-on'}" onclick="db.ref('${id}/dispo').set(${isOff?true:false})">${isOff?'OFF':'ON'}</button></div>`;
                         }
                         h += `</div>`;
                     }
@@ -122,10 +112,7 @@
             document.getElementById('stock-list').innerHTML = h;
         });
 
-        function setStock(path, isOff) { db.ref(path).set(!isOff); }
-        function setOption(id, idx, isOff) { db.ref(id + '/optionsDispo/' + idx).set(!isOff); }
-
-        // --- GESTION COMMANDES & HISTORIQUE ---
+        // --- COMMANDES ET HISTORIQUE ---
         db.ref('commandes').on('value', (snap) => {
             const data = snap.val();
             const grid = document.getElementById('orders-grid');
@@ -145,10 +132,8 @@
                         grid.innerHTML += `
                             <div class="order-card">
                                 <div class="table-num">T-${o.table}</div>
-                                <div>${o.articles.map(a => `<div class="item-line"><span>${a.nom}</span></div>`).join('')}</div>
-                                <div style="font-weight:700; color:var(--gold); text-align:right;">Total: ${o.total}€</div>
-                                <button class="btn-action btn-chef" onclick="printChef('${id}')">IMPRIMER CUISINE</button>
-                                <button class="btn-action btn-pay" onclick="encaisser('${id}')">ENCAISSER (ESP/CB)</button>
+                                <div style="font-size:0.85rem;">${o.articles.map(a => `• ${a.nom}<br>`).join('')}</div>
+                                <button class="btn-pay" onclick="db.ref('commandes/${id}').update({statut:'Payé', date:'${new Date().toLocaleDateString('fr-FR')}'})">ENCAISSER</button>
                             </div>`;
                     }
                 }
@@ -157,7 +142,7 @@
             let hHtml = "";
             for(let d in groups) {
                 hHtml += `
-                    <div class="history-day" onclick="toggleH(this)">
+                    <div class="history-day" onclick="this.nextElementSibling.classList.toggle('active')">
                         <strong>📅 ${d}</strong><span>${groups[d].total.toFixed(2)}€</span>
                     </div>
                     <div class="history-details">
@@ -166,25 +151,6 @@
             }
             hist.innerHTML = hHtml;
         });
-
-        function toggleH(el) { el.nextElementSibling.classList.toggle('active'); }
-
-        function encaisser(id) {
-            db.ref('commandes/' + id).update({
-                statut: "Payé",
-                date: new Date().toLocaleDateString('fr-FR')
-            });
-        }
-
-        function printChef(id) {
-            db.ref('commandes/' + id).once('value', (snap) => {
-                const o = snap.val();
-                let c = `<div class="ticket"><h1>TABLE ${o.table}</h1><hr>`;
-                o.articles.forEach(a => { c += `<h2>• ${a.nom}</h2>`; });
-                document.getElementById('print-zone').innerHTML = c;
-                window.print();
-            });
-        }
     </script>
 </body>
 </html>
