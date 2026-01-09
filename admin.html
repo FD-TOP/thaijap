@@ -2,46 +2,54 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin ThaiJap | Dashboard Pro</title>
+    <title>Admin ThaiJap | Dashboard Expert</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* --- STYLE IDENTIQUE POUR LA COHÉRENCE --- */
         :root { --red: #BC002D; --black: #121212; --gold: #C5A059; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: #fff; overflow: hidden; }
         .admin-layout-pro { display: flex; height: 100vh; }
-        .admin-sidebar { background: #1a1a1a; width: 300px; border-right: 1px solid #333; display: flex; flex-direction: column; }
+        
+        /* Colonnes */
+        .admin-sidebar { background: #1a1a1a; width: 320px; border-right: 1px solid #333; display: flex; flex-direction: column; }
         .admin-main { flex: 1; background: #050505; overflow-y: auto; }
         .history-panel { width: 340px; border-left: 1px solid #333; background: #111; }
-        .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; }
-        .scrollable { flex: 1; overflow-y: auto; }
         
-        /* STOCKS STYLE */
-        .stock-group { border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .stock-group-title { background: #222; padding: 10px; font-size: 0.8rem; color: var(--gold); font-weight: 700; text-transform: uppercase; }
-        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; font-size: 0.8rem; }
-        .stock-item button { border: none; padding: 6px 12px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 4px; font-size: 0.7rem; min-width: 60px; }
+        .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        .scrollable { flex: 1; overflow-y: auto; }
+
+        /* Catégories dans le Stock */
+        .stock-cat-title { background: var(--red); color: white; padding: 5px 10px; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; }
+
+        /* Stocks Cards */
+        .stock-group { border-bottom: 1px solid #333; background: #151515; }
+        .stock-group-title { padding: 8px 12px; font-size: 0.8rem; color: var(--gold); font-weight: 700; border-bottom: 1px solid #222; }
+        .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 0.75rem; }
+        
+        .btn-toggle { border: none; padding: 4px 10px; cursor: pointer; color: #fff; font-weight: 700; border-radius: 3px; font-size: 0.65rem; min-width: 50px; }
         .btn-on { background: #2ecc71; }
         .btn-off { background: #e74c3c; }
 
-        /* COMMANDES & HISTORIQUE */
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 20px; }
+        /* Commandes & Historique (Simplifié pour la lecture) */
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 20px; }
         .order-card { background: #1a1a1a; padding: 15px; border-top: 5px solid var(--red); border-radius: 4px; }
         .history-day-header { background: #1a1a1a; padding: 15px; border-left: 4px solid var(--gold); margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; }
         .history-day-details { max-height: 0; overflow: hidden; transition: 0.3s; background: #050505; }
         .history-day-details.active { max-height: 2000px; padding: 10px; border: 1px solid #222; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.8rem; }
+        .history-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 0.75rem; }
     </style>
 </head>
 <body class="admin-layout-pro">
 
     <aside class="admin-sidebar">
-        <div class="panel-header">📦 STOCKS DÉTAILLÉS</div>
+        <div class="panel-header">📦 GESTION STOCKS</div>
         <div id="stock-list" class="scrollable"></div>
     </aside>
 
     <main class="admin-main">
-        <div class="panel-header">🔥 EN COURS</div>
+        <div class="panel-header">🔥 COMMANDES</div>
         <div id="admin-grid" class="admin-grid"></div>
     </main>
 
@@ -62,38 +70,43 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        const catsOrder = ["entrees", "sushis", "plats", "boissons", "desserts"];
+
         // --- GESTION DES STOCKS ---
         db.ref('/').on('value', (snap) => {
             const data = snap.val();
             let h = "";
-            for(let id in data) {
-                if(id.startsWith('p')) {
-                    const p = data[id];
-                    h += `<div class="stock-group"><div class="stock-group-title">${p.nom}</div>`;
-                    
-                    // Cas 1: Specials (Riz, Nouilles...)
-                    if(p.specials) {
-                        p.specials.forEach((s, idx) => {
-                            const isOff = s.dispo === false;
-                            h += `<div class="stock-item"><span>${s.v}</span><button onclick="toggleStock('${id}/specials/${idx}', ${isOff})" class="${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
-                        });
-                    } 
-                    // Cas 2: Options (Nems, Sushis, Boissons...)
-                    else if(p.options) {
-                        p.options.forEach((opt, idx) => {
-                            // On crée une clé 'optionsDispo' pour ne pas écraser le tableau de texte
-                            const isOff = (p.optionsDispo && p.optionsDispo[idx] === false);
-                            h += `<div class="stock-item"><span>${opt}</span><button onclick="toggleOption('${id}', ${idx}, ${isOff})" class="${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
-                        });
+            
+            catsOrder.forEach(catName => {
+                h += `<div class="stock-cat-title">${catName.toUpperCase()}</div>`;
+                for(let id in data) {
+                    if(id.startsWith('p') && data[id].categorie === catName) {
+                        const p = data[id];
+                        h += `<div class="stock-group"><div class="stock-group-title">${p.nom}</div>`;
+                        
+                        // Si le produit a des "specials" (Prix et garniture variables)
+                        if(p.specials) {
+                            p.specials.forEach((s, idx) => {
+                                const isOff = s.dispo === false;
+                                h += `<div class="stock-item"><span>${s.v}</span><button onclick="toggleStock('${id}/specials/${idx}', ${isOff})" class="btn-toggle ${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
+                            });
+                        } 
+                        // Si le produit a des "options" (Sushis, Boissons, Nems...)
+                        else if(p.options) {
+                            p.options.forEach((opt, idx) => {
+                                const isOff = (p.optionsDispo && p.optionsDispo[idx] === false);
+                                h += `<div class="stock-item"><span>${opt}</span><button onclick="toggleOption('${id}', ${idx}, ${isOff})" class="btn-toggle ${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
+                            });
+                        }
+                        // Produit Simple
+                        else {
+                            const isOff = p.dispo === false;
+                            h += `<div class="stock-item"><span>Global</span><button onclick="toggleStock('${id}', ${isOff})" class="btn-toggle ${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
+                        }
+                        h += `</div>`;
                     }
-                    // Cas 3: Produit Simple
-                    else {
-                        const isOff = p.dispo === false;
-                        h += `<div class="stock-item"><span>Produit</span><button onclick="toggleStock('${id}', ${isOff})" class="${isOff?'btn-off':'btn-on'}">${isOff?'OFF':'ON'}</button></div>`;
-                    }
-                    h += `</div>`;
                 }
-            }
+            });
             document.getElementById('stock-list').innerHTML = h;
         });
 
@@ -122,10 +135,10 @@
                     groups[d].list.push(o);
                 } else {
                     grid.innerHTML += `<div class="order-card">
-                        <div style="font-size:1.5rem; color:var(--red); font-weight:700;">T-${o.table}</div>
-                        <div style="margin:10px 0;">${o.articles.map(a=>`• ${a.nom}<br>`).join('')}</div>
+                        <div style="font-size:1.4rem; color:var(--red); font-weight:700;">T-${o.table}</div>
+                        <div style="margin:10px 0; font-size:0.85rem;">${o.articles.map(a=>`• ${a.nom}<br>`).join('')}</div>
                         <div style="font-weight:700; color:var(--gold);">Total: ${o.total}€</div>
-                        <button onclick="db.ref('commandes/${id}').update({statut:'Payé', modePaiement:'Espèces', date:'${new Date().toLocaleDateString('fr-FR')}'})" style="width:100%; margin-top:10px; background:var(--gold); border:none; padding:10px; color:black; font-weight:700; cursor:pointer;">ENCAISSER</button>
+                        <button onclick="db.ref('commandes/${id}').update({statut:'Payé', modePaiement:'Espèces', date:'${new Date().toLocaleDateString('fr-FR')}'})" style="width:100%; margin-top:10px; background:var(--gold); border:none; padding:8px; color:black; font-weight:700; cursor:pointer; font-size:0.7rem;">ENCAISSER</button>
                     </div>`;
                 }
             }
