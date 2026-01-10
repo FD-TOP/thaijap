@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin ThaiJap | Dashboard</title>
+    <title>Admin ThaiJap | Gestion Totale</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
@@ -24,19 +24,19 @@
         .term-cart { flex: 1; background: #0a0a0a; padding: 10px; display: flex; flex-direction: column; }
         .term-item { background: #222; margin-bottom: 5px; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
         .term-select { width: 100%; background: #000; color: #fff; border: 1px solid #444; margin-top: 5px; font-size: 0.75rem; }
-        .btn-term-send { background: var(--gold); color: #000; border: none; padding: 10px; font-weight: 700; cursor: pointer; margin-top: auto; }
+        .btn-term-send { background: var(--gold); color: #000; border: none; padding: 10px; font-weight: 700; cursor: pointer; margin-top: auto; border-radius: 4px; }
         #print-area { display: none; }
-        @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left:0; top:0; width: 100%; display: block !important; color: black; font-family: 'Courier Prime', monospace; } }
+        @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left:0; top:0; width: 100%; display: block !important; color: black; font-family: 'Courier Prime', monospace; padding: 20px; } .print-center { text-align: center; } }
     </style>
 </head>
 <body>
     <div id="print-area"></div>
     <aside class="sidebar no-print">
-        <div class="panel-header">📦 STOCKS & FARSES</div>
+        <div class="panel-header">📦 STOCKS & OPTIONS</div>
         <div id="stock-list"></div>
     </aside>
     <main class="main no-print">
-        <div class="panel-header">🔥 EN COURS</div>
+        <div class="panel-header">🔥 COMMANDES EN COURS</div>
         <div id="order-list"></div>
         <div class="terminal-box">
             <div id="terminal-title" style="background:var(--gold); color:#000; font-size:0.75rem; padding:8px; font-weight:700; text-align:center;">TERMINAL ADMIN</div>
@@ -45,9 +45,10 @@
                 <div class="term-cart">
                     <input type="text" id="term-table" placeholder="Table n°" style="width:100%; padding:8px; margin-bottom:10px; background:#000; color:var(--gold); border:1px solid var(--gold);">
                     <div id="term-cart-list" style="flex:1; overflow-y:auto;"></div>
+                    <div id="applied-menu-term" style="font-size:0.65rem; color:var(--gold); font-weight:700; margin-bottom:5px;"></div>
                     <div id="term-total" style="font-weight:700; color:var(--gold); padding:5px 0; border-top:1px solid #333;">TOTAL: 0.00€</div>
                     <button id="btn-main-terminal" class="btn-term-send" onclick="envoyerCommandeInterne()">ENVOYER</button>
-                    <button id="btn-cancel-edit" style="display:none; background:#444; color:white; border:none; margin-top:5px; padding:5px;" onclick="annulerModification()">ANNULER</button>
+                    <button id="btn-cancel-edit" style="display:none; background:#444; color:white; border:none; margin-top:5px; padding:5px; border-radius:4px; cursor:pointer;" onclick="annulerModification()">ANNULER</button>
                 </div>
             </div>
         </div>
@@ -75,7 +76,7 @@
                         const p = menuData[id];
                         sH += `<div class="stock-item">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span>${p.nom}</span>
+                                <span style="font-weight:700;">${p.nom}</span>
                                 <button class="btn-toggle ${p.dispo?'on':'off'}" onclick="db.ref('${id}/dispo').set(${!p.dispo})">${p.dispo?'ON':'OFF'}</button>
                             </div>`;
                         if(p.options) {
@@ -122,43 +123,71 @@
             }
             temp.forEach(i => total += i.prix);
             document.getElementById('term-total').innerText = "TOTAL: " + total.toFixed(2) + "€";
-            document.getElementById('term-cart-list').innerHTML = panierInterne.map((i,idx)=>`<div class="variant-row"><span>${i.nom}</span><span onclick="panierInterne.splice(${idx},1);majPanierInterne()" style="color:red;cursor:pointer">✕</span></div>`).join('');
+            document.getElementById('applied-menu-term').innerText = (nF>0?nF+" Family ":"") + (nG>0?nG+" Gourmand ":"") + (nT>0?nT+" Tokyo":"");
+            document.getElementById('term-cart-list').innerHTML = panierInterne.map((i,idx)=>`<div class="variant-row"><span>${i.nom}</span><span onclick="panierInterne.splice(${idx},1);majPanierInterne()" style="color:red;cursor:pointer;font-weight:700;">✕</span></div>`).join('');
         }
 
         function chargerPourModification(id) {
             db.ref('commandes/' + id).once('value', s => {
                 const o = s.val(); editingOrderId = id; panierInterne = [...o.articles];
                 document.getElementById('term-table').value = o.table;
+                document.getElementById('terminal-title').innerText = "MODIFICATION TABLE " + o.table;
+                document.getElementById('terminal-title').style.background = "#3498db";
                 document.getElementById('btn-main-terminal').innerText = "METTRE À JOUR";
                 document.getElementById('btn-cancel-edit').style.display = "block";
                 majPanierInterne();
             });
         }
 
-        function annulerModification() { editingOrderId = null; panierInterne = []; document.getElementById('term-table').value = ""; document.getElementById('btn-main-terminal').innerText = "ENVOYER"; document.getElementById('btn-cancel-edit').style.display = "none"; majPanierInterne(); }
+        function annulerModification() { editingOrderId = null; panierInterne = []; document.getElementById('term-table').value = ""; document.getElementById('terminal-title').innerText = "TERMINAL ADMIN"; document.getElementById('btn-main-terminal').innerText = "ENVOYER"; document.getElementById('btn-cancel-edit').style.display = "none"; majPanierInterne(); }
 
         function envoyerCommandeInterne() {
             const table = document.getElementById('term-table').value;
             if(!table || panierInterne.length === 0) return alert("Vérifier Table/Panier");
             const total = document.getElementById('term-total').innerText.split(': ')[1].replace('€','');
-            if(editingOrderId) { db.ref('commandes/'+editingOrderId).update({ articles: panierInterne, total }).then(() => annulerModification()); }
-            else { db.ref('commandes').push({ table, articles: panierInterne, total, statut: "En attente", heure: new Date().toLocaleTimeString() }); panierInterne=[]; majPanierInterne(); }
+            const menu = document.getElementById('applied-menu-term').innerText;
+            if(editingOrderId) { db.ref('commandes/'+editingOrderId).update({ articles: panierInterne, total, menu }).then(() => annulerModification()); }
+            else { db.ref('commandes').push({ table, articles: panierInterne, total, menu, statut: "En attente", heure: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) }); panierInterne=[]; majPanierInterne(); }
         }
 
         db.ref('commandes').on('value', snap => {
-            const data = snap.val(); let oH = "";
+            const data = snap.val(); let oH = "", hH = ""; let totaux = {};
+            if(!data) return;
             for(let id in data) {
-                const o = data[id]; if(o.statut === "Payé") continue;
-                oH += `<div class="order-card"><button onclick="chargerPourModification('${id}')" style="position:absolute;right:10px;top:10px;background:none;border:1px solid #444;color:gold;padding:2px 5px;cursor:pointer">✏️</button>
-                    <div style="font-weight:700; color:var(--red);">TABLE ${o.table}</div>
-                    <div style="font-size:0.8rem; margin:10px 0;">${o.articles.map(a => `• ${a.nom}`).join('<br>')}</div>
-                    <div style="font-weight:700;">TOTAL: ${o.total}€</div>
-                    <button class="btn-term-send" style="width:100%; margin-top:10px;" onclick="encaisser('${id}','CB')">PAYÉ</button></div>`;
+                const o = data[id], date = o.date || new Date().toLocaleDateString('fr-FR');
+                if(o.statut === "Payé") {
+                    if(!totaux[date]) totaux[date] = 0; totaux[date] += parseFloat(o.total);
+                    hH = `<div style="padding:10px; border-bottom:1px solid #222; font-size:0.75rem;">T-${o.table} : ${o.total}€ (${o.modePaiement})</div>` + hH;
+                } else {
+                    oH += `<div class="order-card"><button onclick="chargerPourModification('${id}')" style="position:absolute;right:10px;top:10px;background:none;border:1px solid #444;color:gold;padding:2px 5px;cursor:pointer;border-radius:4px;">✏️</button>
+                        <div style="font-weight:700; color:var(--red);">TABLE ${o.table} <small style="float:right; color:#666;">${o.heure}</small></div>
+                        <div style="color:var(--gold); font-size:0.65rem;">${o.menu || ''}</div>
+                        <div style="margin:10px 0; font-size:0.8rem; line-height:1.3;">${o.articles.map(a => `• ${a.nom}`).join('<br>')}</div>
+                        <div style="text-align:right; font-weight:700;">TOTAL: ${o.total}€</div>
+                        <button class="btn-chef" style="margin-top:10px;" onclick="imprimerChef('${id}')">👨‍🍳 CUISINE</button>
+                        <div style="display:flex; justify-content:space-between;"><button class="btn-pay" style="background:var(--green);" onclick="encaisser('${id}','ESP')">ESPÈCES</button><button class="btn-pay" style="background:var(--blue);" onclick="encaisser('${id}','CB')">CARTE</button></div></div>`;
+                }
             }
             document.getElementById('order-list').innerHTML = oH;
+            let histFinal = ""; for(let j in totaux) histFinal += `<div style="background:#222; padding:10px; font-weight:700; color:var(--gold); border-bottom:1px solid #333;">${j} : ${totaux[j].toFixed(2)}€</div>`;
+            document.getElementById('history-list').innerHTML = histFinal + hH;
         });
 
-        function encaisser(id, m) { db.ref('commandes/'+id).update({ statut: "Payé", modePaiement: m }); }
+        function imprimerChef(id) {
+            db.ref('commandes/'+id).once('value', s => {
+                const o = s.val(); let html = `<div class="print-center"><h1 style="font-size:35pt;margin:0;">TABLE ${o.table}</h1><p>${o.heure}</p><hr></div>`;
+                o.articles.forEach(a => { html += `<div style="font-size:22pt; margin-bottom:12px; border-bottom:1px dashed #000;">• ${a.nom.toUpperCase()}</div>`; });
+                document.getElementById('print-area').innerHTML = html; window.print();
+            });
+        }
+
+        function encaisser(id, mode) {
+            db.ref('commandes/'+id).once('value', s => {
+                const o = s.val(); let html = `<div class="print-center"><h2>THAI JAP</h2><p>Table ${o.table} | ${o.heure}</p><hr></div>${o.articles.map(a => `<div style="display:flex;justify-content:space-between;font-size:12pt;"><span>${a.nom}</span><span>${a.prix.toFixed(2)}€</span></div>`).join('')}<hr><div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14pt;"><span>TOTAL</span><span>${o.total}€</span></div><p style="text-align:center;">Paiement : ${mode}</p>`;
+                document.getElementById('print-area').innerHTML = html; window.print();
+                db.ref('commandes/'+id).update({ statut: "Payé", modePaiement: mode, date: new Date().toLocaleDateString('fr-FR') });
+            });
+        }
     </script>
 </body>
 </html>
