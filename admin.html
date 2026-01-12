@@ -91,7 +91,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCiqOVjzAS5Crn4SPBkY3btyJtuCBgddpY", databaseURL: "https://thaijap-default-rtdb.europe-west1.firebasedatabase.app", projectId: "thaijap", appId: "1:84821188454:web:0078ba82b4affbe0abb2a7" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let menuData = {}, panierM = [], editingOrderId = null, filter = 'day';
+        let menuData = {}, panierM = [], editingOrderId = null, filter = 'day', oldArticles = [];
 
         // --- STOCKS & TERMINAL ---
         db.ref('/').on('value', snap => {
@@ -141,11 +141,11 @@
                     if(match) { totF += parseFloat(o.total); hH = `<div class="hist-item" onclick="showHistDetails('${id}')"><div style="display:flex;justify-content:space-between;"><b>T-${o.table}</b> <b>${o.total}€</b></div><small>${o.date} | ${o.modePaiement}</small></div>` + hH; }
                 } else {
                     oH += `<div class="order-card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;"><b>TABLE ${o.table}</b><button class="btn-toggle on" style="font-size:0.5rem;" onclick="editOrder('${id}')">MODIF</button></div>
-                        <div style="font-size:0.75rem;margin:10px 0;color:#bbb;">${o.articles.map(a=>`• ${a.nom}`).join('<br>')}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;"><b>TABLE ${o.table}</b><button class="btn-toggle on" style="font-size:0.5rem;background:var(--blue);border:none;" onclick="editOrder('${id}')">MODIF</button></div>
+                        <div style="font-size:0.75rem;margin:10px 0;color:#bbb;">${o.articles ? o.articles.map(a=>`• ${a.nom}`).join('<br>') : ''}</div>
                         <div style="text-align:right;font-weight:bold;color:var(--gold);border-top:1px solid #333;padding-top:10px;">${o.total}€</div>
                         <div style="display:flex;gap:4px;margin-top:10px;">
-                            <button class="btn-action" style="background:var(--blue);flex:1;" onclick="imprimerTicket('${id}','CLIENT','NOTE')">TICKET</button>
+                            <button class="btn-action" style="background:var(--blue);flex:1;" onclick="imprimerTicket('${id}','CLIENT','NOTE')">NOTE</button>
                             ${o.derniersAjouts ? `<button class="btn-action" style="background:orange;color:black;flex:1;" onclick="imprimerTicket('${id}','CHEF','SUITE')">SUITE</button>` : ''}
                             <button class="btn-action" style="background:var(--green);flex:1;" onclick="encaisser('${id}','CASH')">CASH</button>
                             <button class="btn-action" style="background:#3498db;flex:1;" onclick="encaisser('${id}','CB')">CB</button>
@@ -159,7 +159,7 @@
         function showHistDetails(id) {
             db.ref('commandes/'+id).once('value', s => {
                 const o = s.val();
-                document.getElementById('modal-body').innerHTML = `<h3>Table ${o.table}</h3><p>${o.date} | ${o.heure}</p><hr>${o.articles.map(a=>`<div>${a.nom} <span style="float:right">${a.prix.toFixed(2)}€</span></div>`).join('')}<hr><b>TOTAL: ${o.total}€</b><br><button class="btn-action" style="background:var(--blue);width:100%;margin-top:10px;" onclick="imprimerTicket('${id}','CLIENT','${o.modePaiement}')">RE-IMPRIMER</button>`;
+                document.getElementById('modal-body').innerHTML = `<h3>Table ${o.table}</h3><p>${o.date} | ${o.heure}</p><hr>${o.articles ? o.articles.map(a=>`<div>${a.nom} <span style="float:right">${a.prix.toFixed(2)}€</span></div>`).join('') : ''}<hr><b>TOTAL: ${o.total}€</b><br><button class="btn-action" style="background:var(--blue);width:100%;margin-top:10px;" onclick="imprimerTicket('${id}','CLIENT','${o.modePaiement}')">RE-IMPRIMER</button>`;
                 document.getElementById('modal-overlay').style.display = 'flex';
             });
         }
@@ -170,11 +170,11 @@
                 if(type === 'CHEF') {
                     const liste = mode === 'SUITE' ? o.derniersAjouts : o.articles;
                     h = `<div class="chef-title">TABLE ${o.table}</div><div style="text-align:center;font-weight:bold;">${mode}</div><br>`;
-                    liste.forEach(a => { h += `<div class="chef-item">• ${a.nom.toUpperCase()}</div>`; });
+                    if(liste) liste.forEach(a => { h += `<div class="chef-item">• ${a.nom.toUpperCase()}</div>`; });
                     if(mode === 'SUITE') db.ref('commandes/'+id).update({ modifier: false, derniersAjouts: null });
                 } else {
                     h = `<div style="text-align:center;font-size:14pt;"><b>THAI JAP</b><br>Table ${o.table} | ${o.heure}</div><hr>`;
-                    o.articles.forEach(a => { h += `<div class="print-item"><span>${a.nom}</span><span>${a.prix.toFixed(2)}</span></div>`; });
+                    if(o.articles) o.articles.forEach(a => { h += `<div class="print-item"><span>${a.nom}</span><span>${a.prix.toFixed(2)}</span></div>`; });
                     h += `<hr><div class="print-item" style="font-weight:bold;"><span>TOTAL</span><span>${o.total}€</span></div><br><div style="text-align:center;font-size:9pt;">Paiement: ${mode}</div>`;
                 }
                 const p = document.getElementById('print-area'); p.innerHTML = h; window.print();
@@ -182,24 +182,60 @@
         }
 
         function encaisser(id, mode) { imprimerTicket(id, 'CLIENT', mode); db.ref('commandes/'+id).update({ statut: "Payé", modePaiement: mode, date: new Date().toLocaleDateString('fr-FR') }); }
-        function editOrder(id) { db.ref('commandes/'+id).once('value', s => { const o = s.val(); editingOrderId = id; panierM = [...o.articles]; document.getElementById('term-table').value = o.table; document.getElementById('btn-main-term').innerText = "MAJ"; document.getElementById('btn-cancel-edit').style.display = "block"; majM(); }); }
         
+        function editOrder(id) {
+            db.ref('commandes/'+id).once('value', s => {
+                const o = s.val();
+                editingOrderId = id;
+                oldArticles = o.articles ? JSON.parse(JSON.stringify(o.articles)) : [];
+                panierM = JSON.parse(JSON.stringify(oldArticles));
+                document.getElementById('term-table').value = o.table;
+                document.getElementById('btn-main-term').innerText = "MAJ";
+                document.getElementById('btn-cancel-edit').style.display = "block";
+                majM();
+            });
+        }
+
         function validerTerminal() {
-            const t = document.getElementById('term-table').value; if(!t || panierM.length==0) return;
+            const t = document.getElementById('term-table').value;
+            if(!t || panierM.length === 0) return;
             const tot = panierM.reduce((a,b)=>a+b.prix,0).toFixed(2);
+
             if(editingOrderId) {
-                db.ref('commandes/'+editingOrderId).once('value', s => {
-                    const prev = s.val().articles || [];
-                    const nouveaux = panierM.filter(p => !prev.some(x => x.nom === p.nom));
-                    db.ref('commandes/'+editingOrderId).update({ articles: panierM, total: tot, modifier: (nouveaux.length > 0), derniersAjouts: nouveaux.length > 0 ? nouveaux : null });
+                // On calcule les nouveaux ajouts pour le bouton SUITE
+                const nouveaux = panierM.filter(p => !oldArticles.some(x => x.nom === p.nom));
+                
+                db.ref('commandes/'+editingOrderId).update({
+                    articles: panierM,
+                    total: tot,
+                    modifier: nouveaux.length > 0,
+                    derniersAjouts: nouveaux.length > 0 ? nouveaux : null
+                }).then(() => {
+                    annulerModif();
+                }).catch(err => alert("Erreur d'enregistrement"));
+            } else {
+                db.ref('commandes').push({
+                    table: t,
+                    articles: panierM,
+                    statut: "En attente",
+                    total: tot,
+                    heure: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+                    date: new Date().toLocaleDateString('fr-FR')
+                }).then(() => {
                     annulerModif();
                 });
-            } else {
-                db.ref('commandes').push({ table:t, articles:panierM, statut:"En attente", total: tot, heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), date:new Date().toLocaleDateString('fr-FR') });
-                annulerModif();
             }
         }
-        function annulerModif() { editingOrderId = null; panierM = []; document.getElementById('btn-main-term').innerText = "ENVOYER"; document.getElementById('btn-cancel-edit').style.display = "none"; majM(); }
+
+        function annulerModif() { 
+            editingOrderId = null; 
+            panierM = []; 
+            oldArticles = [];
+            document.getElementById('term-table').value = "";
+            document.getElementById('btn-main-term').innerText = "ENVOYER"; 
+            document.getElementById('btn-cancel-edit').style.display = "none"; 
+            majM(); 
+        }
     </script>
 </body>
 </html>
