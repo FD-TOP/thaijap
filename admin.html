@@ -2,94 +2,105 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin ThaiJap | Console de Gestion</title>
+    <title>Admin ThaiJap | Gestion & Statistiques</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Courier+Prime&display=swap" rel="stylesheet">
     <style>
         :root { --red: #BC002D; --black: #121212; --gold: #C5A059; --green: #2ecc71; --blue: #3498db; --bg-card: #1e1e1e; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #0a0a0a; color: #fff; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: #fff; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Structure */
-        .sidebar { width: 320px; background: #151515; border-right: 1px solid #333; overflow-y: auto; }
+        /* Layout */
+        .sidebar { width: 300px; background: #151515; border-right: 1px solid #333; overflow-y: auto; }
         .main { flex: 1; background: #000; display: flex; flex-direction: column; border-right: 1px solid #333; }
-        .history { width: 300px; background: #0d0d0d; overflow-y: auto; }
+        .history { width: 320px; background: #0d0d0d; display: flex; flex-direction: column; }
         
         .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; font-size: 0.85rem; letter-spacing: 1px; }
 
-        /* Liste des Commandes */
-        #order-list { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; align-content: start; }
-        .order-card { background: var(--bg-card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--red); position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .order-card.modified { border-left-color: orange; }
-        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .order-id { font-weight: 700; color: var(--gold); font-size: 1.1rem; }
-        .mod-badge { background: orange; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
-        
-        .order-items { font-size: 0.85rem; color: #ccc; line-height: 1.4; border-top: 1px solid #333; padding-top: 10px; }
-        .btn-edit { background: none; border: 1px solid #444; color: #888; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; transition: 0.3s; }
-        .btn-edit:hover { border-color: var(--blue); color: var(--blue); }
+        /* Commandes Actives */
+        #order-list { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; align-content: start; }
+        .order-card { background: var(--bg-card); padding: 12px; border-radius: 10px; border-left: 5px solid var(--red); position: relative; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .btn-edit { background: none; border: 1px solid #444; color: #888; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.65rem; }
 
-        /* Terminal de Commande */
-        .terminal-box { height: 350px; background: #151515; border-top: 3px solid var(--gold); display: flex; flex-direction: column; }
+        /* Terminal */
+        .terminal-box { height: 320px; background: #151515; border-top: 3px solid var(--gold); display: flex; flex-direction: column; }
         .terminal-grid { display: flex; flex: 1; overflow: hidden; }
         .term-products { flex: 2; overflow-y: auto; padding: 10px; }
         .term-cart { flex: 1.2; background: #050505; padding: 15px; display: flex; flex-direction: column; border-left: 1px solid #333; }
-        
-        .term-item { background: #252525; margin-bottom: 8px; padding: 10px; border-radius: 6px; border: 1px solid #333; }
-        .term-item b { font-size: 0.9rem; }
-        .term-select { width: 100%; background: #000; color: #fff; border: 1px solid #444; margin-top: 6px; padding: 5px; border-radius: 4px; font-size: 0.8rem; }
-        
+        .term-item { background: #252525; margin-bottom: 5px; padding: 8px; border-radius: 6px; border: 1px solid #333; font-size: 0.8rem; }
+        .term-select { width: 100%; background: #000; color: #fff; border: 1px solid #444; margin-top: 5px; padding: 3px; border-radius: 4px; font-size: 0.75rem; }
+
+        /* Historique & Filtres */
+        .filter-box { padding: 10px; background: #1a1a1a; border-bottom: 1px solid #333; display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+        .btn-filter { background: #333; border: none; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
+        .btn-filter.active { background: var(--gold); color: #000; }
+        #history-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .hist-item { background: #151515; padding: 10px; border-radius: 5px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }
+        .hist-item:hover { background: #222; border-left-color: var(--gold); }
+
         /* Stocks */
-        .stock-item { background: #1a1a1a; padding: 10px; border-bottom: 1px solid #222; }
-        .btn-toggle { border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: 700; color: #fff; font-size: 0.65rem; }
+        .stock-item { background: #1a1a1a; padding: 8px; border-bottom: 1px solid #222; }
+        .btn-toggle { border: none; padding: 3px 8px; cursor: pointer; border-radius: 3px; font-weight: 700; color: #fff; font-size: 0.6rem; }
         .on { background: var(--green); } .off { background: var(--red); }
-        .variant-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; padding: 4px 0 4px 15px; border-left: 1px solid #333; margin-top: 4px; }
+        .variant-row { display: flex; justify-content: space-between; font-size: 0.65rem; padding: 3px 0 3px 10px; border-left: 1px solid #333; }
 
-        /* Boutons Actions */
-        .btn-action { border: none; padding: 10px; border-radius: 5px; color: white; font-weight: 700; cursor: pointer; flex: 1; font-size: 0.7rem; text-transform: uppercase; }
-        .btn-update-mode { background: var(--blue) !important; color: #fff !important; }
+        /* Fenêtre Modale (Détails) */
+        #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; color: black; width: 90%; max-width: 400px; padding: 20px; border-radius: 12px; position: relative; max-height: 80vh; overflow-y: auto; }
+        .close-modal { position: absolute; right: 15px; top: 15px; font-size: 1.5rem; cursor: pointer; font-weight: bold; }
 
-        /* Impression */
-        #print-area { display: none; }
+        /* Boutons encaissement */
+        .btn-pay-choice { display: flex; gap: 5px; margin-top: 10px; }
+        .pay-btn { flex: 1; padding: 8px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; font-size: 0.65rem; }
+
         @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; font-family: 'Courier Prime', monospace; } }
     </style>
 </head>
 <body>
     <div id="print-area"></div>
 
-    <aside class="sidebar no-print">
-        <div class="panel-header">📦 STOCKS & DISPONIBILITÉ</div>
+    <div id="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModal()">×</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="panel-header">📦 STOCKS / FARSES</div>
         <div id="stock-list"></div>
     </aside>
 
-    <main class="main no-print">
-        <div class="panel-header">🔥 COMMANDES EN PRÉPARATION</div>
+    <main class="main">
+        <div class="panel-header">🔥 COMMANDES ACTIVES</div>
         <div id="order-list"></div>
-
         <div class="terminal-box">
-            <div id="term-title" class="panel-header" style="color:var(--gold); border-color:var(--gold);">⌨️ TERMINAL DE COMMANDE</div>
+            <div id="term-title" class="panel-header" style="color:var(--gold); border-color:var(--gold);">⌨️ TERMINAL</div>
             <div class="terminal-grid">
                 <div id="term-products" class="term-products"></div>
                 <div class="term-cart">
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <input type="text" id="term-table" placeholder="Table" style="width:60px; padding:8px; background:#000; color:var(--gold); border:1px solid var(--gold); border-radius:4px; font-weight:bold; text-align:center;">
-                        <div id="applied-menu-term" style="flex:1; font-size:0.65rem; color:var(--gold); display:flex; align-items:center;"></div>
-                    </div>
-                    <div id="term-cart-list" style="flex:1; overflow-y:auto; font-size:0.8rem; border-top:1px solid #222; padding-top:10px;"></div>
-                    <div id="term-total" style="color:var(--gold); font-weight:700; font-size:1.2rem; padding:10px 0; text-align:right;">0.00€</div>
+                    <input type="text" id="term-table" placeholder="Table" style="width:50px; padding:8px; background:#000; color:var(--gold); border:1px solid var(--gold); border-radius:4px; margin-bottom:5px;">
+                    <div id="term-cart-list" style="flex:1; overflow-y:auto; font-size:0.8rem;"></div>
+                    <div id="term-total" style="color:var(--gold); font-weight:700; font-size:1.1rem; padding:5px 0;">0.00€</div>
                     <div style="display:flex; gap:5px;">
-                        <button id="btn-cancel-edit" style="display:none; background:#444; color:#fff; border:none; padding:10px; border-radius:4px; cursor:pointer;" onclick="annulerModif()">X</button>
-                        <button id="btn-main-term" class="btn-action" style="background:var(--gold); color:#000;" onclick="validerTerminal()">ENVOYER CUISINE</button>
+                        <button id="btn-cancel-edit" style="display:none; background:#444; color:#fff; border:none; padding:5px 10px; border-radius:4px;" onclick="annulerModif()">X</button>
+                        <button id="btn-main-term" style="background:var(--gold); color:#000; flex:1; border:none; font-weight:bold; cursor:pointer;" onclick="validerTerminal()">ENVOYER</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <aside class="history no-print">
-        <div class="panel-header">📊 RÉCAPITULATIF CAISSE</div>
-        <div id="day-total" style="text-align:center; padding:15px; background:var(--gold); color:black; font-weight:800; font-size:1.2rem; margin:10px; border-radius:8px;">0.00€</div>
-        <div id="history-list" style="padding:10px;"></div>
+    <aside class="history">
+        <div class="panel-header">📊 HISTORIQUE</div>
+        <div class="filter-box">
+            <button class="btn-filter active" onclick="setFilter('day', this)">JOUR</button>
+            <button class="btn-filter" onclick="setFilter('week', this)">SEMAINE</button>
+            <button class="btn-filter" onclick="setFilter('month', this)">MOIS</button>
+        </div>
+        <div id="day-total" style="text-align:center; padding:10px; background:var(--gold); color:black; font-weight:800; font-size:1.1rem;">0.00€</div>
+        <div id="history-list"></div>
     </aside>
 
     <script>
@@ -97,27 +108,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         
-        let menuData = {}, panierM = [], editingOrderId = null, initialArticles = [];
+        let menuData = {}, panierM = [], editingOrderId = null, initialArticles = [], currentFilter = 'day';
 
-        // --- GESTION DES STOCKS ---
+        // --- STOCKS & TERMINAL ---
         db.ref('/').on('value', snap => {
             menuData = snap.val(); let sH = "", tH = "";
             const cats = ["entrees", "sushis", "plats", "boissons", "desserts"];
             cats.forEach(cat => {
-                sH += `<div style="background:#222; padding:8px; font-size:0.7rem; font-weight:bold; color:var(--red); border-bottom:1px solid #333;">${cat.toUpperCase()}</div>`;
-                tH += `<div style="color:var(--gold); font-size:0.7rem; font-weight:bold; margin:15px 0 5px 0; border-bottom:1px solid #333; text-transform:uppercase;">${cat}</div>`;
+                sH += `<div style="background:#222; padding:5px; font-size:0.6rem; color:var(--red); font-weight:bold;">${cat.toUpperCase()}</div>`;
+                tH += `<div style="color:var(--gold); font-size:0.6rem; margin:8px 0 4px 0; border-bottom:1px solid #333;">${cat.toUpperCase()}</div>`;
                 for(let id in menuData) {
-                    if(id.startsWith('p') && menuData[id].categorie === cat) {
+                    if(id.startsWith('p')) {
                         const p = menuData[id];
-                        sH += `<div class="stock-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:0.8rem;">${p.nom}</span><button onclick="db.ref('${id}/dispo').set(${!p.dispo})" class="btn-toggle ${p.dispo?'on':'off'}">${p.dispo?'ON':'OFF'}</button></div>`;
-                        if(p.options) p.options.forEach((opt, i) => { sH += `<div class="variant-row"><span>${opt.n}</span><button onclick="db.ref('${id}/options/${i}/s').set(${!opt.s})" class="btn-toggle ${opt.s?'on':'off'}">${opt.s?'ON':'OFF'}</button></div>`; });
-                        if(p.specials) p.specials.forEach((spec, i) => { sH += `<div class="variant-row"><span>${spec.v}</span><button onclick="db.ref('${id}/specials/${i}/s').set(${!spec.s})" class="btn-toggle ${spec.s?'on':'off'}">${spec.s?'ON':'OFF'}</button></div>`; });
-                        sH += `</div>`;
-                        if(p.dispo) {
-                            let o = p.options ? `<select id="t-opt-${id}" class="term-select">${p.options.map(o=>o.s?`<option>${o.n}</option>`:'').join('')}</select>` : '';
-                            let s = p.specials ? `<select id="t-spec-${id}" class="term-select">${p.specials.map(s=>s.s?`<option value="${s.v}|${s.p}">${s.v} (${s.p}€)</option>`:'').join('')}</select>` : '';
-                            tH += `<div class="term-item"><div style="display:flex; justify-content:space-between;"><b>${p.nom}</b><button onclick="ajouterM('${id}')" style="background:var(--gold); border:none; padding:4px 10px; border-radius:4px; font-weight:bold; cursor:pointer;">+</button></div>${o}${s}</div>`;
+                        if(p.categorie === cat) {
+                            sH += `<div class="stock-item"><div style="display:flex; justify-content:space-between; align-items:center;"><span>${p.nom}</span><button onclick="db.ref('${id}/dispo').set(${!p.dispo})" class="btn-toggle ${p.dispo?'on':'off'}">${p.dispo?'ON':'OFF'}</button></div>`;
+                            if(p.options) p.options.forEach((o, i) => { sH += `<div class="variant-row"><span>${o.n}</span><button onclick="db.ref('${id}/options/${i}/s').set(${!o.s})" class="btn-toggle ${o.s?'on':'off'}">${o.s?'ON':'OFF'}</button></div>`; });
+                            if(p.specials) p.specials.forEach((s, i) => { sH += `<div class="variant-row"><span>${s.v}</span><button onclick="db.ref('${id}/specials/${i}/s').set(${!s.s})" class="btn-toggle ${s.s?'on':'off'}">${s.s?'ON':'OFF'}</button></div>`; });
+                            sH += `</div>`;
+                            if(p.dispo) {
+                                let oHtml = p.options ? `<select id="t-opt-${id}" class="term-select">${p.options.map(o=>o.s?`<option>${o.n}</option>`:'').join('')}</select>` : '';
+                                let sHtml = p.specials ? `<select id="t-spec-${id}" class="term-select">${p.specials.map(s=>s.s?`<option value="${s.v}|${s.p}">${s.v} (${s.p}€)</option>`:'').join('')}</select>` : '';
+                                tH += `<div class="term-item"><div style="display:flex; justify-content:space-between;"><b>${p.nom}</b><button onclick="ajouterM('${id}')" style="background:var(--gold); border:none; padding:2px 8px; border-radius:3px; cursor:pointer;">+</button></div>${oHtml}${sHtml}</div>`;
+                            }
                         }
                     }
                 }
@@ -126,13 +138,11 @@
             document.getElementById('term-products').innerHTML = tH;
         });
 
-        // --- LOGIQUE TERMINAL ---
         function ajouterM(id) {
             const p = menuData[id]; let n = p.nom, px = p.prix || 0;
             if(document.getElementById('t-opt-'+id)) n += " (" + document.getElementById('t-opt-'+id).value + ")";
             if(document.getElementById('t-spec-'+id)) { const s = document.getElementById('t-spec-'+id).value.split('|'); n += " " + s[0]; px = parseFloat(s[1]); }
-            panierM.push({nom: n, prix: px, categorie: p.categorie});
-            majM();
+            panierM.push({nom: n, prix: px, categorie: p.categorie}); majM();
         }
 
         function majM() {
@@ -148,21 +158,99 @@
             }
             temp.forEach(i => total += i.prix);
             document.getElementById('term-total').innerText = total.toFixed(2)+"€";
-            document.getElementById('applied-menu-term').innerText = (nF>0?nF+" Family ":"")+(nG>0?nG+" Gourm. ":"")+(nT>0?nT+" Tokyo":"");
-            document.getElementById('term-cart-list').innerHTML = panierM.map((i,idx)=>`<div style="margin-bottom:5px; display:flex; justify-content:space-between;"><span>• ${i.nom}</span><span onclick="panierM.splice(${idx},1);majM()" style="color:red;cursor:pointer;">✕</span></div>`).join('');
+            document.getElementById('term-cart-list').innerHTML = panierM.map((i,idx)=>`<div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>• ${i.nom}</span><span onclick="panierM.splice(${idx},1);majM()" style="color:red;cursor:pointer;">✕</span></div>`).join('');
+        }
+
+        // --- COMMANDES ET HISTORIQUE ---
+        function setFilter(f, btn) {
+            currentFilter = f;
+            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            db.ref('commandes').once('value', snap => majAffichage(snap.val()));
+        }
+
+        function isThisWeek(dateStr) {
+            const [d, m, y] = dateStr.split('/');
+            const date = new Date(y, m - 1, d);
+            const now = new Date();
+            const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)));
+            startOfWeek.setHours(0,0,0,0);
+            return date >= startOfWeek;
+        }
+
+        db.ref('commandes').on('value', snap => majAffichage(snap.val()));
+
+        function majAffichage(data) {
+            let oH = "", hH = "", totalFiltre = 0;
+            const today = new Date().toLocaleDateString('fr-FR');
+            const thisMonth = today.split('/').slice(1).join('/');
+
+            for(let id in data) {
+                const o = data[id];
+                if(o.statut === "Payé") {
+                    let match = false;
+                    if(currentFilter === 'day' && o.date === today) match = true;
+                    if(currentFilter === 'week' && isThisWeek(o.date)) match = true;
+                    if(currentFilter === 'month' && o.date.includes(thisMonth)) match = true;
+
+                    if(match) {
+                        totalFiltre += parseFloat(o.total);
+                        hH = `<div class="hist-item" onclick="showDetails('${id}')">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                                <span>T-${o.table}</span><span>${o.total}€</span>
+                            </div>
+                            <div style="font-size:0.65rem; color:#888;">${o.date} ${o.heure} (${o.modePaiement || '?'})</div>
+                        </div>` + hH;
+                    }
+                } else {
+                    oH += `<div class="order-card">
+                        <div class="order-header">
+                            <b style="color:var(--gold)">TABLE ${o.table}</b>
+                            <button class="btn-edit" onclick="editOrder('${id}')">✏️</button>
+                        </div>
+                        <div style="font-size:0.75rem; margin-bottom:10px;">${o.articles.map(a => `• ${a.nom}`).join('<br>')}</div>
+                        <div style="text-align:right; font-weight:bold; color:var(--gold);">${o.total}€</div>
+                        <div class="btn-pay-choice">
+                            <button class="pay-btn" style="background:var(--blue);" onclick="imprimer('${id}', false)">TICKET</button>
+                            <button class="pay-btn" style="background:var(--green);" onclick="encaisser('${id}', 'CASH')">CASH</button>
+                            <button class="pay-btn" style="background:#3498db;" onclick="encaisser('${id}', 'CB')">CB</button>
+                        </div>
+                    </div>`;
+                }
+            }
+            document.getElementById('order-list').innerHTML = oH;
+            document.getElementById('history-list').innerHTML = hH;
+            document.getElementById('day-total').innerText = totalFiltre.toFixed(2) + "€";
+        }
+
+        function showDetails(id) {
+            db.ref('commandes/'+id).once('value', s => {
+                const o = s.val();
+                let html = `
+                    <h3 style="margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">Détails Commande</h3>
+                    <p><b>Table :</b> ${o.table}</p>
+                    <p><b>Date/Heure :</b> ${o.date} - ${o.heure}</p>
+                    <p><b>Paiement :</b> ${o.modePaiement || 'Non défini'}</p>
+                    <hr>
+                    <div style="margin:15px 0;">${o.articles.map(a => `<div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:5px;"><span>• ${a.nom}</span><span>${a.prix.toFixed(2)}€</span></div>`).join('')}</div>
+                    <hr>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem; margin-top:10px;">
+                        <span>TOTAL</span><span>${o.total}€</span>
+                    </div>
+                `;
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('modal-overlay').style.display = 'flex';
+            });
         }
 
         function editOrder(id) {
             db.ref('commandes/'+id).once('value', s => {
-                const o = s.val();
-                editingOrderId = id;
+                const o = s.val(); editingOrderId = id;
                 initialArticles = JSON.parse(JSON.stringify(o.articles || []));
                 panierM = JSON.parse(JSON.stringify(initialArticles));
                 document.getElementById('term-table').value = o.table;
-                document.getElementById('term-title').innerText = "📍 ÉDITION TABLE " + o.table;
-                document.getElementById('term-title').style.background = "var(--blue)";
-                document.getElementById('btn-main-term').innerText = "Mettre à jour";
-                document.getElementById('btn-main-term').classList.add('btn-update-mode');
+                document.getElementById('term-title').innerText = "📍 MODIF. T-" + o.table;
+                document.getElementById('btn-main-term').innerText = "METTRE À JOUR";
                 document.getElementById('btn-cancel-edit').style.display = "block";
                 majM();
             });
@@ -171,73 +259,34 @@
         function annulerModif() {
             editingOrderId = null; panierM = [];
             document.getElementById('term-table').value = "";
-            document.getElementById('term-title').innerText = "⌨️ TERMINAL DE COMMANDE";
-            document.getElementById('term-title').style.background = "black";
-            document.getElementById('btn-main-term').innerText = "Envoyer Cuisine";
-            document.getElementById('btn-main-term').classList.remove('btn-update-mode');
+            document.getElementById('term-title').innerText = "⌨️ TERMINAL";
+            document.getElementById('btn-main-term').innerText = "ENVOYER";
             document.getElementById('btn-cancel-edit').style.display = "none";
             majM();
         }
 
         function validerTerminal() {
             const t = document.getElementById('term-table').value;
-            if(!t || panierM.length==0) return alert("Vérifiez la table et le panier");
+            if(!t || panierM.length==0) return;
             const tot = document.getElementById('term-total').innerText.replace('€','');
-            const menu = document.getElementById('applied-menu-term').innerText;
-
             if(editingOrderId) {
-                // Calculer les nouveaux articles pour la suite
-                const nouveaux = panierM.filter(p => !initialArticles.some(prev => prev.nom === p.nom));
-                db.ref('commandes/'+editingOrderId).update({
-                    articles: panierM, total: tot, menu: menu, modifier: nouveaux.length > 0, derniersAjouts: nouveaux.length > 0 ? nouveaux : null
-                }).then(() => annulerModif());
+                db.ref('commandes/'+editingOrderId).update({ articles: panierM, total: tot, modifier: true }).then(() => annulerModif());
             } else {
-                db.ref('commandes').push({ table:t, articles:panierM, statut:"En attente", total: tot, menu: menu, heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), date:new Date().toLocaleDateString('fr-FR') });
+                db.ref('commandes').push({ table:t, articles:panierM, statut:"En attente", total: tot, heure:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), date:new Date().toLocaleDateString('fr-FR') });
                 annulerModif();
             }
         }
 
-        // --- COMMANDES ACTIVES ---
-        db.ref('commandes').on('value', snap => {
-            const data = snap.val(); let oH = "", hH = "", totJ = 0;
-            const today = new Date().toLocaleDateString('fr-FR');
-            let count = 1;
-            for(let id in data) {
-                const o = data[id];
-                if(o.statut === "Payé") {
-                    if(o.date === today) { totJ += parseFloat(o.total); hH = `<div style="padding:8px; border-bottom:1px solid #222; font-size:0.75rem;"><b>T-${o.table}</b>: ${o.total}€</div>` + hH; }
-                } else {
-                    oH += `<div class="order-card ${o.modifier?'modified':''}">
-                        <div class="order-header">
-                            <div class="order-id">#${count++} TABLE ${o.table} ${o.modifier?'<span class="mod-badge">Suivi</span>':''}</div>
-                            <button class="btn-edit" onclick="editOrder('${id}')">✏️ MODIFIER</button>
-                        </div>
-                        <div style="color:var(--gold); font-size:0.65rem; font-weight:bold; margin-bottom:8px;">${o.menu || ''}</div>
-                        <div class="order-items">${o.articles.map(a => `• ${a.nom}${a.note?' <i style="color:var(--red); font-size:0.7rem;">('+a.note+')</i>':''}`).join('<br>')}</div>
-                        <div style="text-align:right; font-weight:700; color:var(--gold); margin-top:10px; font-size:1rem;">${o.total}€</div>
-                        <div class="btn-pay-group" style="margin-top:15px; display:flex; gap:5px;">
-                            <button class="btn-action" style="background:var(--blue);" onclick="imprimer('${id}', false)">TICKET</button>
-                            ${o.derniersAjouts ? `<button class="btn-action" style="background:orange; color:#000;" onclick="imprimer('${id}', true)">SUITE</button>` : ''}
-                            <button class="btn-action" style="background:var(--green);" onclick="encaisser('${id}')">ENCAISSER</button>
-                        </div>
-                    </div>`;
-                }
-            }
-            document.getElementById('order-list').innerHTML = oH;
-            document.getElementById('day-total').innerText = totJ.toFixed(2)+"€";
-            document.getElementById('history-list').innerHTML = hH;
-        });
-
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+        function encaisser(id, m) { db.ref('commandes/'+id).update({ statut: "Payé", modePaiement: m, date: new Date().toLocaleDateString('fr-FR') }); }
         function imprimer(id, suite) {
             db.ref('commandes/'+id).once('value', s => {
                 const o = s.val(); const liste = suite ? o.derniersAjouts : o.articles;
-                let h = `<div style="text-align:center;"><h1 style="font-size:40pt;margin:0;">TABLE ${o.table}</h1>${suite?'<h2>*** SUITE / AJOUT ***</h2>':''}<hr></div>`;
-                liste.forEach(a => h += `<div style="font-size:24pt; border-bottom:1px dashed #000; padding:15px 0;">• ${a.nom.toUpperCase()} ${a.note?`<br>!! ${a.note.toUpperCase()} !!`:''}</div>`);
+                let h = `<div style="text-align:center;"><h1 style="font-size:30pt;">TABLE ${o.table}</h1><hr></div>`;
+                liste.forEach(a => h += `<div style="font-size:20pt; border-bottom:1px dashed #000; padding:10px 0;">• ${a.nom.toUpperCase()}</div>`);
                 document.getElementById('print-area').innerHTML = h; window.print();
-                if(suite) db.ref('commandes/'+id).update({ modifier: false, derniersAjouts: null });
             });
         }
-        function encaisser(id) { db.ref('commandes/'+id).update({ statut: "Payé", date: new Date().toLocaleDateString('fr-FR') }); }
     </script>
 </body>
 </html>
