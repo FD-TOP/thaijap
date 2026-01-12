@@ -2,59 +2,66 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin ThaiJap | Console de Gestion</title>
+    <title>Admin ThaiJap | Console Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Courier+Prime&display=swap" rel="stylesheet">
     <style>
-        :root { --red: #BC002D; --black: #121212; --gold: #C5A059; --green: #2ecc71; --blue: #3498db; --grey: #1a1a1a; --border: #333; }
+        :root { 
+            --red: #BC002D; --black: #0a0a0a; --gold: #C5A059; --green: #2ecc71; 
+            --blue: #3498db; --grey-dark: #151515; --grey-light: #222; --border: #333; 
+        }
 
-        /* ZONE IMPRESSION (Invisible sur écran) */
         #print-area { display: none; position: fixed; left: -9999px; }
 
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: #fff; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar & History */
-        .sidebar, .history { width: 300px; background: #0a0a0a; border-right: 1px solid var(--border); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .main { flex: 1; background: #000; display: flex; flex-direction: column; overflow: hidden; }
+        /* --- STOCKS SIDEBAR --- */
+        .sidebar { width: 320px; background: var(--grey-dark); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .stock-container { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .stock-cat-header { background: #000; padding: 12px 15px; font-size: 0.75rem; color: var(--gold); font-weight: 700; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 1px; }
+        .stock-item { background: var(--grey-dark); padding: 10px 15px; border-bottom: 1px solid #222; }
+        .stock-main-row { display: flex; justify-content: space-between; align-items: center; }
+        .stock-name { font-size: 0.85rem; font-weight: 600; }
+        .stock-opt-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0 5px 20px; font-size: 0.7rem; color: #888; border-left: 2px solid var(--border); margin-top: 5px; }
 
-        .panel-header { padding: 18px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        /* --- TOGGLE BUTTONS --- */
+        .btn-toggle { border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: 700; font-size: 0.6rem; transition: 0.3s; min-width: 45px; text-transform: uppercase; }
+        .on { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+        .off { background: rgba(188, 0, 45, 0.15); color: #ff4d4d; border: 1px solid #ff4d4d; }
+        .btn-toggle:hover { filter: brightness(1.3); }
 
-        /* Commande Cards */
-        #order-list { flex: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; align-content: start; }
-        .order-card { background: var(--grey); padding: 18px; border-radius: 12px; border-top: 4px solid var(--red); transition: transform 0.2s; box-shadow: 0 10px 20px rgba(0,0,0,0.5); position: relative; }
-        .order-card:hover { transform: translateY(-3px); border-top-color: var(--gold); }
-        .order-card b { font-size: 1.1rem; color: var(--gold); }
-        .item-list { font-size: 0.85rem; margin: 15px 0; color: #bbb; line-height: 1.6; }
+        /* --- MAIN & ORDERS --- */
+        .main { flex: 1; display: flex; flex-direction: column; background: #000; }
+        #order-list { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; align-content: start; }
+        .order-card { background: var(--grey-dark); padding: 15px; border-radius: 10px; border-top: 4px solid var(--red); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
 
-        /* Terminal Bas */
-        .terminal-box { height: 350px; background: #0a0a0a; border-top: 3px solid var(--gold); display: flex; flex-direction: column; }
-        .terminal-grid { display: flex; flex: 1; overflow: hidden; }
-        .term-products { flex: 2; overflow-y: auto; padding: 15px; border-right: 1px solid var(--border); }
-        .term-cart { flex: 1.2; background: #050505; padding: 20px; display: flex; flex-direction: column; }
-        .term-prod-item { background: #151515; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #222; }
-
-        /* Stocks Buttons */
-        .stock-item { background: #111; padding: 12px; border-bottom: 1px solid #222; }
-        .btn-toggle { border: none; padding: 5px 12px; cursor: pointer; border-radius: 20px; font-weight: 700; color: #fff; font-size: 0.6rem; text-transform: uppercase; transition: 0.3s; }
-        .on { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
-        .off { background: rgba(188, 0, 45, 0.2); color: #ff4d4d; border: 1px solid #ff4d4d; }
-        .btn-toggle:hover { filter: brightness(1.2); }
-
-        /* Buttons Actions */
-        .pay-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; transition: 0.2s; }
-        .pay-btn:active { transform: scale(0.95); }
+        /* --- TERMINAL (BOUTONS TACTILES) --- */
+        .terminal-box { height: 380px; background: #0a0a0a; border-top: 3px solid var(--gold); display: flex; }
+        .term-products { flex: 2; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; align-content: start; }
+        .term-cat-divider { grid-column: 1 / -1; font-size: 0.65rem; color: var(--gold); font-weight: 700; margin: 10px 0 5px 0; text-transform: uppercase; }
         
-        /* Modal & Pop-up */
-        #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: #fff; color: #000; width: 90%; max-width: 400px; padding: 25px; border-radius: 16px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .term-btn { background: var(--grey-light); border: 1px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: 0.2s; }
+        .term-btn:hover { border-color: var(--gold); background: #2a2a2a; }
+        .term-btn b { font-size: 0.75rem; color: #fff; }
+        .term-select { width: 100%; background: #000; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 0.7rem; padding: 3px; cursor: pointer; }
 
-        /* PRINT STYLES */
+        .term-cart { width: 300px; background: #050505; border-left: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; }
+        .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+        #term-cart-list { flex: 1; overflow-y: auto; font-size: 0.8rem; font-family: 'Courier Prime', monospace; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 6px; color: #ddd; }
+
+        /* --- HISTORY --- */
+        .history { width: 280px; background: #0a0a0a; border-left: 1px solid var(--border); overflow-y: auto; }
+
+        .panel-header { padding: 15px; background: #000; color: var(--red); font-weight: 700; border-bottom: 2px solid var(--red); text-align: center; font-size: 0.8rem; letter-spacing: 1px; }
+        .btn-action { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.65rem; }
+
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; color: #000; font-family: 'Courier Prime', monospace; padding: 5mm; background: #fff; }
-            .chef-title { font-size: 26pt; font-weight: bold; text-align: center; border-bottom: 3px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+            .chef-title { font-size: 26pt; font-weight: bold; text-align: center; border-bottom: 3px solid #000; }
             .chef-item { font-size: 20pt; font-weight: bold; padding: 5px 0; border-bottom: 1px dashed #000; }
         }
     </style>
@@ -62,42 +69,36 @@
 <body>
     <div id="print-area"></div>
     
-    <div id="modal-overlay" onclick="this.style.display='none'">
-        <div class="modal-content" id="modal-body" onclick="event.stopPropagation()"></div>
-    </div>
-
     <aside class="sidebar">
-        <div class="panel-header">📦 Inventaire & Farsés</div>
-        <div id="stock-list" style="overflow-y: auto; flex: 1;"></div>
+        <div class="panel-header">📦 STOCKS / FARSÉS</div>
+        <div id="stock-list" class="stock-container"></div>
     </aside>
 
     <main class="main">
-        <div class="panel-header">🔥 Commandes en Cours</div>
+        <div class="panel-header">🔥 COMMANDES ACTIVES</div>
         <div id="order-list"></div>
         
         <div class="terminal-box">
-            <div id="term-title" class="panel-header" style="color:var(--gold); border-bottom-color: var(--gold);">⌨️ Prise de Commande Manuelle</div>
-            <div class="terminal-grid">
-                <div id="term-products" class="term-products"></div>
-                <div class="term-cart">
-                    <div style="display:flex; justify-content: space-between; align-items: center;">
-                        <input type="text" id="term-table" placeholder="Table" style="width:70px; padding:10px; background:#000; color:var(--gold); border:1px solid var(--gold); border-radius:6px; font-weight:bold; font-size:1.1rem; text-align:center;">
-                        <div id="term-total" style="color:var(--gold); font-weight:700; font-size:1.4rem;">0.00€</div>
-                    </div>
-                    <div id="term-cart-list" style="flex:1; overflow-y:auto; font-size:0.85rem; margin-top:15px; border-top:1px solid #222; padding-top:10px;"></div>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button id="btn-cancel-edit" style="display:none; background:#444; color:#fff; border:none; padding:12px; border-radius:6px; cursor:pointer;" onclick="annulerModif()">X</button>
-                        <button id="btn-main-term" style="background:var(--gold); color:#000; flex:1; border:none; font-weight:bold; border-radius:6px; cursor:pointer; text-transform:uppercase;" onclick="validerTerminal()">Valider Cuisine</button>
-                    </div>
+            <div id="term-products" class="term-products"></div>
+            
+            <div class="term-cart">
+                <div class="cart-header">
+                    <input type="text" id="term-table" placeholder="T°" style="width:50px; padding:8px; background:#000; color:var(--gold); border:1px solid var(--gold); border-radius:6px; font-weight:bold; text-align:center;">
+                    <div id="term-total" style="color:var(--gold); font-weight:700; font-size:1.3rem;">0.00€</div>
+                </div>
+                <div id="term-cart-list"></div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button id="btn-cancel-edit" style="display:none; background:#444; color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer;" onclick="annulerModif()">X</button>
+                    <button id="btn-main-term" class="btn-action" style="background:var(--gold); color:#000; flex:1;" onclick="validerTerminal()">Valider Cuisine</button>
                 </div>
             </div>
         </div>
     </main>
 
     <aside class="history">
-        <div class="panel-header">📊 Journal de Caisse</div>
-        <div id="day-total" style="text-align:center; padding:20px; background:var(--gold); color:black; font-weight:800; font-size:1.5rem; margin: 15px; border-radius:12px;">0.00€</div>
-        <div id="history-list" style="flex:1; overflow-y:auto; padding:15px;"></div>
+        <div class="panel-header">📊 RÉCAPITULATIF</div>
+        <div id="day-total" style="text-align:center; padding:15px; background:var(--gold); color:black; font-weight:800; font-size:1.3rem; margin:15px; border-radius:10px;">0.00€</div>
+        <div id="history-list" style="padding:10px;"></div>
     </aside>
 
     <script>
@@ -106,22 +107,30 @@
         const db = firebase.database();
         let menuData = {}, panierM = [], editingOrderId = null;
 
-        // RENDER STOCKS & PRODUCTS
+        // RENDER STOCKS & TERMINAL
         db.ref('/').on('value', snap => {
             menuData = snap.val(); let sH = "", tH = "";
             const cats = ["entrees", "sushis", "plats", "boissons", "desserts"];
             cats.forEach(cat => {
-                sH += `<div style="background:#000; padding:10px; font-size:0.7rem; color:var(--red); font-weight:bold; border-bottom:1px solid #222;">${cat.toUpperCase()}</div>`;
-                tH += `<div style="color:var(--gold); font-size:0.7rem; margin:15px 0 5px 0; border-bottom:1px solid #222; font-weight:bold; text-transform:uppercase;">${cat}</div>`;
+                sH += `<div class="stock-cat-header">${cat}</div>`;
+                tH += `<div class="term-cat-divider">${cat}</div>`;
                 for(let id in menuData) {
                     if(id.startsWith('p') && menuData[id].categorie === cat) {
                         const p = menuData[id];
-                        sH += `<div class="stock-item"><div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:0.85rem;">${p.nom}</span><button onclick="db.ref('${id}/dispo').set(${!p.dispo})" class="btn-toggle ${p.dispo?'on':'off'}">${p.dispo?'ON':'OFF'}</button></div>`;
-                        if(p.options) p.options.forEach((o,i) => { sH += `<div style="display:flex;justify-content:space-between;font-size:0.65rem;padding-left:15px;margin-top:5px;color:#888;"><span>${o.n}</span><button onclick="db.ref('${id}/options/${i}/s').set(${!o.s})" class="btn-toggle ${o.s?'on':'off'}">${o.s?'ON':'OFF'}</button></div>`; });
+                        // Sidebar Stock
+                        sH += `<div class="stock-item">
+                            <div class="stock-main-row">
+                                <span class="stock-name">${p.nom}</span>
+                                <button onclick="db.ref('${id}/dispo').set(${!p.dispo})" class="btn-toggle ${p.dispo?'on':'off'}">${p.dispo?'ON':'OFF'}</button>
+                            </div>`;
+                        if(p.options) p.options.forEach((o,i) => { sH += `<div class="stock-opt-row"><span>${o.n}</span><button onclick="db.ref('${id}/options/${i}/s').set(${!o.s})" class="btn-toggle ${o.s?'on':'off'}">${o.s?'ON':'OFF'}</button></div>`; });
+                        if(p.specials) p.specials.forEach((s,i) => { sH += `<div class="stock-opt-row"><span>${s.v}</span><button onclick="db.ref('${id}/specials/${i}/s').set(${!s.s})" class="btn-toggle ${s.s?'on':'off'}">${s.s?'ON':'OFF'}</button></div>`; });
                         sH += `</div>`;
+                        // Terminal Buttons
                         if(p.dispo) {
-                            let oSel = p.options ? `<select id="t-opt-${id}" style="width:100%;background:#000;color:#fff;border:1px solid #444;margin-top:5px;font-size:0.8rem;padding:5px;border-radius:4px;">${p.options.map(o=>o.s?`<option>${o.n}</option>`:'').join('')}</select>` : '';
-                            tH += `<div class="term-prod-item"><b>${p.nom}</b> <button onclick="ajouterM('${id}')" style="float:right;background:var(--gold);border:none;border-radius:4px;cursor:pointer;padding:2px 10px;font-weight:bold;">+</button>${oSel}</div>`;
+                            let oSel = p.options ? `<select id="t-opt-${id}" class="term-select" onclick="event.stopPropagation()">${p.options.map(o=>o.s?`<option>${o.n}</option>`:'').join('')}</select>` : '';
+                            let sSel = p.specials ? `<select id="t-spec-${id}" class="term-select" onclick="event.stopPropagation()">${p.specials.map(s=>s.s?`<option value="${s.v}|${s.p}">${s.v}</option>`:'').join('')}</select>` : '';
+                            tH += `<div class="term-btn" onclick="ajouterM('${id}')"><b>${p.nom}</b>${oSel}${sSel}</div>`;
                         }
                     }
                 }
@@ -133,55 +142,52 @@
         function ajouterM(id) {
             const p = menuData[id]; let n = p.nom, px = p.prix || 0;
             if(document.getElementById('t-opt-'+id)) n += " (" + document.getElementById('t-opt-'+id).value + ")";
+            if(document.getElementById('t-spec-'+id)) { const s = document.getElementById('t-spec-'+id).value.split('|'); n += " " + s[0]; px = parseFloat(s[1]); }
             panierM.push({nom: n, prix: px, categorie: p.categorie}); majM();
         }
 
         function majM() {
             let total = panierM.reduce((a,b)=>a+b.prix,0);
             document.getElementById('term-total').innerText = total.toFixed(2)+"€";
-            document.getElementById('term-cart-list').innerHTML = panierM.map((i,idx)=>`<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>• ${i.nom}</span><span onclick="panierM.splice(${idx},1);majM()" style="color:var(--red);cursor:pointer;font-weight:bold;">✕</span></div>`).join('');
+            document.getElementById('term-cart-list').innerHTML = panierM.map((i,idx)=>`<div class="cart-item"><span>• ${i.nom}</span><span onclick="panierM.splice(${idx},1);majM()" style="color:var(--red);cursor:pointer;">✕</span></div>`).join('');
         }
 
         db.ref('commandes').on('value', s => render(s.val()));
 
         function render(data) {
-            let oH = "", hH = "", totalD = 0; const today = new Date().toLocaleDateString('fr-FR');
+            let oH = "", hH = "", totJ = 0; const today = new Date().toLocaleDateString('fr-FR');
             for(let id in data) {
                 const o = data[id];
                 if(o.statut === "Payé") {
-                    if(o.date === today) { totalD += parseFloat(o.total); hH = `<div class="stock-item" style="cursor:pointer;" onclick="showDetails('${id}')"><b>T-${o.table}</b> <span style="float:right;">${o.total}€</span></div>` + hH; }
+                    if(o.date === today) { totJ += parseFloat(o.total); hH = `<div class="stock-item" style="border-bottom:1px solid #333;"><b>T-${o.table}</b> <span style="float:right;">${o.total}€</span></div>` + hH; }
                 } else {
                     oH += `<div class="order-card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><b>TABLE ${o.table}</b><button class="btn-toggle on" style="font-size:0.55rem;" onclick="editOrder('${id}')">MODIFIER</button></div>
-                        <div class="item-list">${o.articles.map(a=>`• ${a.nom}`).join('<br>')}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;"><b>TABLE ${o.table}</b><button class="btn-toggle on" style="font-size:0.55rem;" onclick="editOrder('${id}')">EDIT</button></div>
+                        <div style="font-size:0.75rem; margin:10px 0; color:#bbb;">${o.articles.map(a=>`• ${a.nom}`).join('<br>')}</div>
                         <div style="text-align:right; font-weight:bold; color:var(--gold); font-size:1.1rem; border-top:1px solid #333; padding-top:10px;">${o.total}€</div>
-                        <div style="display:flex; gap:5px; margin-top:15px;">
-                            <button class="pay-btn" style="background:var(--blue);" onclick="imprimerTicket('${id}', 'CLIENT', 'TICKET')">NOTE</button>
-                            ${o.derniersAjouts ? `<button class="pay-btn" style="background:orange; color:black;" onclick="imprimerTicket('${id}', 'CHEF', 'SUITE')">SUITE</button>` : ''}
-                            <button class="pay-btn" style="background:var(--green);" onclick="encaisser('${id}', 'CASH')">CASH</button>
-                            <button class="pay-btn" style="background:#3498db;" onclick="encaisser('${id}', 'CB')">CB</button>
+                        <div style="display:flex; gap:5px; margin-top:12px;">
+                            <button class="btn-action" style="background:var(--blue); color:#fff; flex:1;" onclick="imprimerTicket('${id}', 'CLIENT', 'ADDITION')">NOTE</button>
+                            <button class="btn-action" style="background:var(--green); color:#fff; flex:1;" onclick="encaisser('${id}', 'CASH')">FIN</button>
                         </div>
                     </div>`;
                 }
             }
             document.getElementById('order-list').innerHTML = oH;
             document.getElementById('history-list').innerHTML = hH;
-            document.getElementById('day-total').innerText = totalD.toFixed(2)+"€";
+            document.getElementById('day-total').innerText = totJ.toFixed(2)+"€";
         }
 
         function imprimerTicket(id, type, mode) {
             db.ref('commandes/'+id).once('value', s => {
                 const o = s.val(); let h = "";
                 if(type === 'CHEF') {
-                    const liste = mode === 'SUITE' ? o.derniersAjouts : o.articles;
-                    h = `<div class="chef-title">TABLE ${o.table}</div><div style="text-align:center;font-weight:bold;">${mode}</div><br>`;
+                    const liste = o.articles;
+                    h = `<div class="chef-title">TABLE ${o.table}</div><br>`;
                     liste.forEach(a => { h += `<div class="chef-item">• ${a.nom.toUpperCase()}</div>`; });
-                    if(mode === 'SUITE') db.ref('commandes/'+id).update({ modifier: false, derniersAjouts: null });
                 } else {
                     h = `<div style="text-align:center;font-size:14pt;"><b>THAI JAP</b><br>T-${o.table} | ${o.heure}</div><hr>`;
                     o.articles.forEach(a => { h += `<div style="display:flex;justify-content:space-between;font-size:10pt;"><span>${a.nom}</span><span>${a.prix.toFixed(2)}</span></div>`; });
                     h += `<hr><div style="display:flex;justify-content:space-between;font-weight:bold;"><span>TOTAL</span><span>${o.total}€</span></div>`;
-                    h += `<br><div style="text-align:center;font-size:8pt;">Paiement: ${mode}</div>`;
                 }
                 const p = document.getElementById('print-area'); p.innerHTML = h; window.print();
                 setTimeout(() => { p.innerHTML = ""; }, 500);
@@ -189,10 +195,9 @@
         }
 
         function encaisser(id, mode) { imprimerTicket(id, 'CLIENT', mode); db.ref('commandes/'+id).update({ statut: "Payé", modePaiement: mode, date: new Date().toLocaleDateString('fr-FR') }); }
-        function editOrder(id) { db.ref('commandes/'+id).once('value', s => { const o = s.val(); editingOrderId = id; panierM = [...o.articles]; document.getElementById('term-table').value = o.table; document.getElementById('btn-main-term').innerText = "METTRE À JOUR"; document.getElementById('btn-cancel-edit').style.display = "block"; majM(); }); }
-        function validerTerminal() { const t = document.getElementById('term-table').value; if(!t || panierM.length==0) return; const tot = document.getElementById('term-total').innerText.replace('€',''); if(editingOrderId) { db.ref('commandes/'+editingOrderId).once('value', s => { const prev = s.val().articles || []; const nouveaux = panierM.filter(p => !prev.some(x => x.nom === p.nom)); db.ref('commandes/'+editingOrderId).update({ articles: panierM, total: tot, modifier: (nouveaux.length > 0), derniersAjouts: nouveaux.length > 0 ? nouveaux : null }); annulerModif(); }); } else { db.ref('commandes').push({ table:t, articles:panierM, statut:"En attente", total: tot, heure:new Date().toLocaleTimeString(), date:new Date().toLocaleDateString('fr-FR') }); annulerModif(); } }
-        function annulerModif() { editingOrderId = null; panierM = []; document.getElementById('btn-main-term').innerText = "VALIDER CUISINE"; document.getElementById('btn-cancel-edit').style.display = "none"; majM(); }
-        function showDetails(id) { db.ref('commandes/'+id).once('value', s => { const o = s.val(); document.getElementById('modal-body').innerHTML = `<h3>Détails T-${o.table}</h3><hr>${o.articles.map(a=>`<div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:5px;"><span>${a.nom}</span><span>${a.prix.toFixed(2)}€</span></div>`).join('')}<hr><b>Total: ${o.total}€</b><br><small>Payé via: ${o.modePaiement}</small>`; document.getElementById('modal-overlay').style.display='flex'; }); }
+        function editOrder(id) { db.ref('commandes/'+id).once('value', s => { const o = s.val(); editingOrderId = id; panierM = [...o.articles]; document.getElementById('term-table').value = o.table; document.getElementById('btn-main-term').innerText = "MAJ"; document.getElementById('btn-cancel-edit').style.display = "block"; majM(); }); }
+        function validerTerminal() { const t = document.getElementById('term-table').value; if(!t || panierM.length==0) return; const tot = panierM.reduce((a,b)=>a+b.prix,0).toFixed(2); if(editingOrderId) { db.ref('commandes/'+editingOrderId).update({ articles: panierM, total: tot }); annulerModif(); } else { db.ref('commandes').push({ table:t, articles:panierM, statut:"En attente", total: tot, heure:new Date().toLocaleTimeString(), date:new Date().toLocaleDateString('fr-FR') }); annulerModif(); } }
+        function annulerModif() { editingOrderId = null; panierM = []; document.getElementById('btn-main-term').innerText = "ENVOYER"; document.getElementById('btn-cancel-edit').style.display = "none"; majM(); }
     </script>
 </body>
 </html>
