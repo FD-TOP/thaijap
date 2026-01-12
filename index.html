@@ -20,7 +20,7 @@
         .product-info { flex: 1; }
         .prod-name { font-weight: 700; font-size: 0.95rem; }
         .jap-select { width: 100%; border: 1px solid #ddd; padding: 8px; margin-top: 5px; border-radius: 6px; font-size: 0.85rem; }
-        .note-input { width: 100%; border: none; border-bottom: 1px solid #eee; margin-top: 8px; font-size: 0.75rem; font-style: italic; outline: none; padding: 4px 0; background: transparent; color: #555; }
+        .note-input { width: 100%; border: none; border-bottom: 1px solid #eee; margin-top: 8px; font-size: 0.75rem; font-style: italic; outline: none; padding: 4px 0; background: transparent; }
         .add-btn { background: var(--black); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.5rem; cursor: pointer; align-self: center; margin-left: 10px; }
         #cart-bar { position: fixed; bottom: 0; width: 100%; background: var(--black); color: white; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; box-sizing: border-box; z-index: 200; border-top: 2px solid var(--red); }
         #btn-commander { background: var(--red); color: white; border: none; padding: 12px 25px; font-weight: 700; border-radius: 8px; cursor: pointer; }
@@ -39,7 +39,7 @@
     <div id="cart-drawer">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;"><h3 style="margin:0;">Ma Sélection</h3><span onclick="toggleCart()" style="color:var(--red); font-weight:bold; cursor:pointer;">FERMER</span></div>
         <div id="cart-list"></div>
-        <div id="sent-section" class="sent-items" style="display:none;"><div style="font-size:0.7rem; font-weight:bold; color:var(--red); margin-bottom:5px;">DÉJÀ EN CUISINE :</div><div id="sent-list"></div></div>
+        <div id="sent-section" class="sent-items" style="display:none;"><div style="font-size:0.7rem; font-weight:bold; color:var(--red); margin-bottom:5px;">DÉJÀ EN PRÉPARATION :</div><div id="sent-list"></div></div>
     </div>
     <div id="cart-bar" style="display:none;" onclick="toggleCart()">
         <div><span id="cart-count">0</span> ART. | <span id="cart-total">0.00</span>€<div id="applied-menu" style="color:var(--gold); font-size:0.7rem; font-weight:bold;"></div></div>
@@ -51,6 +51,7 @@
         const db = firebase.database();
         const table = new URLSearchParams(window.location.search).get('table') || "Emporter";
         document.getElementById('table-num').innerText = "TABLE " + table;
+        
         let panier = [], articlesEnvoyes = [], currentOrderId = null;
 
         db.ref('commandes').orderByChild('table').equalTo(table).on('value', snap => {
@@ -68,13 +69,9 @@
                 for (let id in data) {
                     const p = data[id];
                     if (id.startsWith('p') && p.categorie === cat && p.dispo) {
-                        let opt = p.options ? `<select id="opt-${id}" class="jap-select">${p.options.map(o=>o.s?`<option>${o.n}</option>`:'').join('')}</select>` : "";
+                        let opt = p.options ? `<select id="opt-${id}" class="jap-select">${p.options.map(o=>o.s?`<option value="${o.n}">${o.n}</option>`:'').join('')}</select>` : "";
                         let spec = p.specials ? `<select id="spec-${id}" class="jap-select">${p.specials.map(s=>s.s?`<option value="${s.v}|${s.p}">${s.v} (${s.p}€)</option>`:'').join('')}</select>` : "";
-                        items += `<div class="product-card">
-                            <div class="img-container"><img src="${p.img}" class="product-img"></div>
-                            <div class="product-info"><span class="prod-name">${p.nom}</span><br><span style="color:var(--red); font-weight:bold;">${p.prix?p.prix.toFixed(2)+'€':''}</span>${opt} ${spec}<input type="text" id="note-${id}" class="note-input" placeholder="Note..."></div>
-                            <button class="add-btn" onclick="ajouter('${id}','${p.nom}',${p.prix||0},'${cat}')">+</button>
-                        </div>`;
+                        items += `<div class="product-card"><div class="img-container"><img src="${p.img}" class="product-img" onerror="this.src='https://via.placeholder.com/150'"></div><div class="product-info"><span class="prod-name">${p.nom}</span><br><span style="color:var(--red); font-weight:bold;">${p.prix?p.prix.toFixed(2)+'€':''}</span>${opt} ${spec}<input type="text" id="note-${id}" class="note-input" placeholder="Note..."></div><button class="add-btn" onclick="ajouter('${id}','${p.nom}',${p.prix||0},'${cat}')">+</button></div>`;
                     }
                 }
                 if(items) html += `<div class="category-title">${cat}</div>` + items;
@@ -87,8 +84,7 @@
             if(document.getElementById('opt-'+id)) n += " (" + document.getElementById('opt-'+id).value + ")";
             if(document.getElementById('spec-'+id)) { const s = document.getElementById('spec-'+id).value.split('|'); n += " " + s[0]; pFinal = parseFloat(s[1]); }
             panier.push({nom: n, prix: pFinal, categorie: cat, note: note});
-            document.getElementById('note-'+id).value = "";
-            calculerPanier();
+            document.getElementById('note-'+id).value = ""; calculerPanier();
         }
 
         function majAffichageSent() {
@@ -112,7 +108,7 @@
             document.getElementById('cart-count').innerText = panier.length + articlesEnvoyes.length;
             document.getElementById('cart-total').innerText = total.toFixed(2);
             document.getElementById('applied-menu').innerText = (nF>0?nF+" Family ":"")+(nG>0?nG+" Gourmand ":"")+(nT>0?nT+" Tokyo":"");
-            document.getElementById('cart-list').innerHTML = panier.map((i,idx)=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><div style="font-size:0.85rem;"><b>${i.nom}</b>${i.note?`<br><small style="color:red;">${i.note}</small>`:''}</div><span onclick="panier.splice(${idx},1);calculerPanier()" style="color:red;font-weight:bold;cursor:pointer;">✕</span></div>`).join('');
+            document.getElementById('cart-list').innerHTML = panier.map((i,idx)=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><div><b>${i.nom}</b>${i.note?`<br><small style="color:red;">${i.note}</small>`:''}</div><span onclick="panier.splice(${idx},1);calculerPanier()" style="color:red;font-weight:bold;cursor:pointer;">✕</span></div>`).join('');
             document.getElementById('cart-bar').style.display = (panier.length + articlesEnvoyes.length > 0) ? "flex" : "none";
         }
 
@@ -124,7 +120,7 @@
             const finalMenu = document.getElementById('applied-menu').innerText;
             const cumul = [...articlesEnvoyes, ...panier];
             if(currentOrderId) {
-                db.ref('commandes/'+currentOrderId).update({ articles: cumul, total: finalTotal, menu: finalMenu, modifier: true, derniersAjouts: panier }).then(() => { success(); });
+                db.ref('commandes/'+currentOrderId).update({ articles: cumul, total: finalTotal, menu: finalMenu, statut: "En attente", modifier: true, derniersAjouts: panier }).then(() => { success(); });
             } else {
                 db.ref('commandes').push({ table, articles: panier, total: finalTotal, menu: finalMenu, statut: "En attente", heure: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), date: new Date().toLocaleDateString('fr-FR') }).then(() => { success(); });
             }
